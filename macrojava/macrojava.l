@@ -4,7 +4,7 @@
 %}
 %%
 \/\/[^\r\n]* ;
-\/\*.*\*\/ ;
+\/\*(?:[^\*]|\*[^/])*\*\/ ;
 [0-9]+ {yylval.ival = atoi(yytext); return INT;}
 true|false {yylval.bval = strdup(yytext); return BOOLEAN;}
 [-!+=/\*\%\|\&<>] {yylval.op = strdup(yytext); return OPERATOR;}

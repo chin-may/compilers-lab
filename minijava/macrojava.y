@@ -43,24 +43,30 @@ extern int yyparse();
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
 Goal: MacroDefinitionList MainClass TypeDeclarationList
 
-MacroDefinitionList: /*empty/
-                   |MacroDefinitionList MacroDefinition
+MacroDefinitionList: /*empty*/
+                   | MacroDefinitionList MacroDefinition
 
 
 TypeDeclarationList: /*empty*/
-                   | TypeDeclarationList '('TypeDeclaration')'
+                   | TypeDeclarationList TypeDeclaration
 
 TypeDeclaration: CLASS IDENTIFIER '{' VarDeclarationList  MethodDeclarationList '}'
                | CLASS IDENTIFIER EXTENDS IDENTIFIER '{' VarDeclarationList MethodDeclarationList '}'
 
 VarDeclarationList: /*empty*/
-                  | VarDeclarationList '(' Type IDENTIFIER ';' ')'
+                  | VarDeclarationList  Type IDENTIFIER ';'
+
+ParamList: /*empty*/
+         | MidParam IDENTIFIER 
+
+MidParam: /*empty*/
+        | MidParam ','
 
 MethodDeclarationList:/*empty*/
-                     |MethodDeclarationList '(' MethodDeclaration ')'
+                     | MethodDeclarationList  MethodDeclaration 
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
-         IDENTIFIER')' '{' IDENTIFIER.IDENTIFIER.IDENTIFIER '(' Expression ')' ';' '}'
+         IDENTIFIER')' '{' IDENTIFIER'.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}'
 
 StatementList: /*empty*/
              | StatementList  Statement 
@@ -77,13 +83,46 @@ Statement: '{' StatementList '}'
          | IF '(' Expression ')' Statement
          | IF '(' Expression ')' Statement ELSE Statement
          | WHILE '(' Expression ')' Statement
-         | IDENTIFIER '(' ExpressionList ')' //Macro call
+         | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
 
 ExpressionList: /*empty*/
-              | MidExpression LastExpression
+              | MidExpression Expression
 
 MidExpression: /*empty*/
              | MidExpression ','
+
+Expression: PrimaryExpression '&' PrimaryExpression
+          |	PrimaryExpression '<' PrimaryExpression
+          | PrimaryExpression '+' PrimaryExpression
+          | PrimaryExpression '-' PrimaryExpression
+          | PrimaryExpression '*' PrimaryExpression
+          | PrimaryExpression '/' PrimaryExpression
+          | PrimaryExpression '[' PrimaryExpression ']'
+          | PrimaryExpression '.' IDENTIFIER
+          | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
+          | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
+
+PrimaryExpression: INT
+                 | BOOLVAL
+                 | IDENTIFIER
+                 | THIS
+                 | NEW INT '[' Expression ']'
+                 | NEW IDENTIFIER '(' ')'
+                 | '!' Expression
+                 | '(' Expression ')'
+
+MacroDefinition: MacroDefStatement
+               | MacroDefExpression
+
+MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
+MacroDefExpression: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '(' Expression ')'
+
+IdentifierList: /*empty*/
+              | MidIdentifier IDENTIFIER
+
+MidIdentifier: /*empty*/
+             | MidIdentifier ','
+
 %%
 main(){
 	// parse through the input until there is no more.

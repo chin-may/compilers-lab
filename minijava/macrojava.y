@@ -4,6 +4,8 @@
 extern FILE* yyin;
 
 extern int yyparse();
+extern int yylineno;
+int yydebug = 1;
 %}
 
 %union{
@@ -102,7 +104,7 @@ Expression: PrimaryExpression '&' PrimaryExpression
           | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
 
-PrimaryExpression: INT
+PrimaryExpression: INTVAL
                  | BOOLVAL
                  | IDENTIFIER
                  | THIS
@@ -115,7 +117,8 @@ MacroDefinition: MacroDefStatement
                | MacroDefExpression
 
 MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
-MacroDefExpression: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '(' Expression ')'
+MacroDefExpression: '#' DEFINE IDENTIFIER '(' Expression ')'
+                  | '#' DEFINE IDENTIFIER '(' PrimaryExpression ')'
 
 IdentifierList: /*empty*/
               | MidIdentifier IDENTIFIER
@@ -132,5 +135,5 @@ main(){
 }
 
 void yyerror(const char *s){
-	printf ("Parse error: %s\n" , s)	;
+	printf ("Parse error: %s\t%d\n" , s, yylineno)	;
 }

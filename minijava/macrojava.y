@@ -1,6 +1,6 @@
 %{
 #include<stdio.h>
-
+#include<stdlib.h>
 extern FILE* yyin;
 
 extern int yyparse();
@@ -57,29 +57,36 @@ TypeDeclaration: CLASS IDENTIFIER '{' VarDeclarationList  MethodDeclarationList 
 
 VarDeclarationList: /*empty*/
                   | VarDeclarationList  Type IDENTIFIER ';'
+                  | VarDeclarationList  IDENTIFIER IDENTIFIER ';'
 
 ParamList: /*empty*/
-         | MidParam IDENTIFIER 
+         | IDENTIFIER
+         | MidParam ',' IDENTIFIER 
 
-MidParam: /*empty*/
-        | MidParam ','
+MidParam: IDENTIFIER
+        | MidParam ',' IDENTIFIER
 
 MethodDeclarationList:/*empty*/
                      | MethodDeclarationList  MethodDeclaration 
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
-         IDENTIFIER')' '{' IDENTIFIER'.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}'
+         IDENTIFIER')' '{' IDENTIFIER'.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
 
-StatementList: /*empty*/
-             | StatementList  Statement 
+//StatementList: /*empty*/
+//             | StatementList  Statement 
+
+StatementList: Statement
+             | MidStatement Statement
+
+MidStatement: Statement
+            | MidStatement Statement
 
 Type: INT '['']'
     | BOOLEAN
     | INT
-    | IDENTIFIER
 
-MethodDeclaration: PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-
+MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
 Statement: '{' StatementList '}'
          | IDENTIFIER '=' Expression ';'
          | IF '(' Expression ')' Statement
@@ -88,10 +95,11 @@ Statement: '{' StatementList '}'
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
 
 ExpressionList: /*empty*/
-              | MidExpression Expression
+              | Expression
+              | MidExpression ',' Expression
 
-MidExpression: /*empty*/
-             | MidExpression ','
+MidExpression: Expression
+             | MidExpression ',' Expression
 
 Expression: PrimaryExpression '&' PrimaryExpression
           |	PrimaryExpression '<' PrimaryExpression
@@ -118,13 +126,12 @@ MacroDefinition: MacroDefStatement
 
 MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
 MacroDefExpression: '#' DEFINE IDENTIFIER '(' Expression ')'
-                  | '#' DEFINE IDENTIFIER '(' PrimaryExpression ')'
 
 IdentifierList: /*empty*/
-              | MidIdentifier IDENTIFIER
+              | MidIdentifier ',' IDENTIFIER
 
-MidIdentifier: /*empty*/
-             | MidIdentifier ','
+MidIdentifier: IDENTIFIER
+             | MidIdentifier ',' IDENTIFIER
 
 %%
 main(){
@@ -136,4 +143,9 @@ main(){
 
 void yyerror(const char *s){
 	printf ("Parse error: %s\t%d\n" , s, yylineno)	;
+    int g;
+    while(!feof(yyin)){
+        scanf("%d",&g);
+        }
+    exit(1);
 }

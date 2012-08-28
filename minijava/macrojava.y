@@ -37,13 +37,11 @@ int yydebug = 1;
 %token EXTENDS
 %token STRING
 
-
-
 %% 
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList
+Goal: MacroDefinitionList MainClass TypeDeclarationList 
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
@@ -63,13 +61,16 @@ VarDeclarationList: /*empty*/
                   | VarDeclarationList  IDENTIFIER IDENTIFIER ';'
                   ;
 
+Param: Type IDENTIFIER
+     | IDENTIFIER IDENTIFIER
+     ;
 ParamList: /*empty*/
-         | IDENTIFIER
-         | MidParam ',' IDENTIFIER 
+         | Param
+         | MidParam ',' Param
          ;
 
-MidParam: IDENTIFIER
-        | MidParam ',' IDENTIFIER
+MidParam: Param
+        | MidParam ',' Param
         ;
 
 MethodDeclarationList:/*empty*/
@@ -77,7 +78,7 @@ MethodDeclarationList:/*empty*/
                      ;
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
-         IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' TExpression ')' ';' '}' '}'
+         IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
          ;
 
 //StatementList: /*empty*/
@@ -97,29 +98,27 @@ Type: INT '['']'
     | INT
     ;
 
-MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN TExpression ';' '}'
-                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN TExpression ';' '}'
+MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  ;
 Statement: '{' StatementList '}'
-         | IDENTIFIER '=' TExpression ';'
-         | IF '(' TExpression ')' Statement
-         | IF '(' TExpression ')' Statement ELSE Statement
-         | WHILE '(' TExpression ')' Statement
+         | IDENTIFIER '=' Expression ';'
+         | ArrayExpression '=' Expression ';'
+         | IF '(' Expression ')' Statement
+         | IF '(' Expression ')' Statement ELSE Statement
+         | WHILE '(' Expression ')' Statement
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
+         | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';'
          ;
 
 ExpressionList: /*empty*/
-              | TExpression
-              | MidExpression ',' TExpression
+              | Expression
+              | MidExpression ',' Expression
               ;
 
-MidExpression: TExpression
-             | MidExpression ',' TExpression
+MidExpression: Expression
+             | MidExpression ',' Expression
              ;
-
-TExpression: Expression
-           | PrimaryExpression
-           ;
 
 Expression: PrimaryExpression '&' PrimaryExpression
           |	PrimaryExpression '<' PrimaryExpression
@@ -127,29 +126,32 @@ Expression: PrimaryExpression '&' PrimaryExpression
           | PrimaryExpression '-' PrimaryExpression
           | PrimaryExpression '*' PrimaryExpression
           | PrimaryExpression '/' PrimaryExpression
-          | PrimaryExpression '[' PrimaryExpression ']'
           | PrimaryExpression '.' IDENTIFIER
           | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
+          | ArrayExpression
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
+          | PrimaryExpression
           ;
+
+ArrayExpression: PrimaryExpression '[' PrimaryExpression ']'
 
 PrimaryExpression: INTVAL
                  | BOOLVAL
                  | IDENTIFIER
                  | THIS
-                 | NEW INT '[' TExpression ']'
+                 | NEW INT '[' Expression ']'
                  | NEW IDENTIFIER '(' ')'
-                 | '!' TExpression
-                 | '(' TExpression ')'
+                 | '!' Expression
+                 | '(' Expression ')'
                  ;
 
 MacroDefinition: MacroDefStatement
                | MacroDefExpression
                ;
 
-MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
+MacroDefStatement: '#' DEFINE IDENTIFIER '{' StatementList '}'
                  ;
-MacroDefExpression: '#' DEFINE IDENTIFIER '(' TExpression ')'
+MacroDefExpression: '#' DEFINE IDENTIFIER '(' Expression ')'
                   ;
 
 IdentifierList: /*empty*/

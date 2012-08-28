@@ -47,59 +47,79 @@ Goal: MacroDefinitionList MainClass TypeDeclarationList
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
+                   ;
 
 
 TypeDeclarationList: /*empty*/
                    | TypeDeclarationList TypeDeclaration
+                   ;
 
 TypeDeclaration: CLASS IDENTIFIER '{' VarDeclarationList  MethodDeclarationList '}'
                | CLASS IDENTIFIER EXTENDS IDENTIFIER '{' VarDeclarationList MethodDeclarationList '}'
+               ;
 
 VarDeclarationList: /*empty*/
                   | VarDeclarationList  Type IDENTIFIER ';'
                   | VarDeclarationList  IDENTIFIER IDENTIFIER ';'
+                  ;
 
 ParamList: /*empty*/
          | IDENTIFIER
          | MidParam ',' IDENTIFIER 
+         ;
 
 MidParam: IDENTIFIER
         | MidParam ',' IDENTIFIER
+        ;
 
 MethodDeclarationList:/*empty*/
                      | MethodDeclarationList  MethodDeclaration 
+                     ;
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
-         IDENTIFIER')' '{' IDENTIFIER'.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
+         IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' TExpression ')' ';' '}' '}'
+         ;
 
 //StatementList: /*empty*/
 //             | StatementList  Statement 
 
-StatementList: Statement
+StatementList: /*empty*/
+             | Statement
              | MidStatement Statement
+             ;
 
 MidStatement: Statement
             | MidStatement Statement
+            ;
 
 Type: INT '['']'
     | BOOLEAN
     | INT
+    ;
 
-MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN TExpression ';' '}'
+                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN TExpression ';' '}'
+                 ;
 Statement: '{' StatementList '}'
-         | IDENTIFIER '=' Expression ';'
-         | IF '(' Expression ')' Statement
-         | IF '(' Expression ')' Statement ELSE Statement
-         | WHILE '(' Expression ')' Statement
+         | IDENTIFIER '=' TExpression ';'
+         | IF '(' TExpression ')' Statement
+         | IF '(' TExpression ')' Statement ELSE Statement
+         | WHILE '(' TExpression ')' Statement
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
+         ;
 
 ExpressionList: /*empty*/
-              | Expression
-              | MidExpression ',' Expression
+              | TExpression
+              | MidExpression ',' TExpression
+              ;
 
-MidExpression: Expression
-             | MidExpression ',' Expression
+MidExpression: TExpression
+             | MidExpression ',' TExpression
+             ;
+
+TExpression: Expression
+           | PrimaryExpression
+           ;
 
 Expression: PrimaryExpression '&' PrimaryExpression
           |	PrimaryExpression '<' PrimaryExpression
@@ -111,27 +131,34 @@ Expression: PrimaryExpression '&' PrimaryExpression
           | PrimaryExpression '.' IDENTIFIER
           | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
+          ;
 
 PrimaryExpression: INTVAL
                  | BOOLVAL
                  | IDENTIFIER
                  | THIS
-                 | NEW INT '[' Expression ']'
+                 | NEW INT '[' TExpression ']'
                  | NEW IDENTIFIER '(' ')'
-                 | '!' Expression
-                 | '(' Expression ')'
+                 | '!' TExpression
+                 | '(' TExpression ')'
+                 ;
 
 MacroDefinition: MacroDefStatement
                | MacroDefExpression
+               ;
 
 MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
-MacroDefExpression: '#' DEFINE IDENTIFIER '(' Expression ')'
+                 ;
+MacroDefExpression: '#' DEFINE IDENTIFIER '(' TExpression ')'
+                  ;
 
 IdentifierList: /*empty*/
               | MidIdentifier ',' IDENTIFIER
+              ;
 
 MidIdentifier: IDENTIFIER
              | MidIdentifier ',' IDENTIFIER
+             ;
 
 %%
 main(){

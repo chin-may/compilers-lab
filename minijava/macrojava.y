@@ -16,6 +16,9 @@ char* explist;
 char midexp[10000];
 char midexp[10000];
 char temppri[10000];
+char arrayexpr[10000];
+char tempstm[10000];
+char stmnt[10000];
 %}
 
 
@@ -30,6 +33,7 @@ char temppri[10000];
         temppri[0] = '\0';
         expr[0] = '\0';
         midexp[0] = '\0';
+        arrayexpr[0] = '\0';
 
 };
 
@@ -137,14 +141,13 @@ Type: INT '['']'
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  ;
-Statement: '{' StatementList '}'
-         | IDENTIFIER '=' Expression ';'    {  // printf("%s = %d ; \n",$1,$3 );
-                                               // strcat(curr, temp);
-                                                }
-         | ArrayExpression '=' Expression ';'
-         | IF '(' Expression ')' Statement
-         | IF '(' Expression ')' Statement ELSE Statement
-         | WHILE '(' Expression ')' Statement
+Statement: '{' StatementList '}' { printf( "{\n %s \n}", stmnt ); }
+         | IDENTIFIER '=' Expression ';'    { sprintf( stmnt, "%s = %s", $1, expr); }
+         | ArrayExpression '=' Expression ';' { sprintf( stmnt, "%s = %s", arrayexpr, expr); }
+         | IF '(' Expression ')' Statement   { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s", expr, temp ); }
+         | IF '(' Expression ')' Statement ELSE { strcpy( tempstm, stmnt ); } 
+             Statement { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s else %s", expr, tempstm, temp ); }
+         | WHILE '(' Expression ')' Statement { strcpy( temp, stmnt );  sprintf( stmnt, "while ( %s ) %s", expr, temp ); }
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
          | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';'
          ;
@@ -164,15 +167,15 @@ Expression: PrimaryExpression '&' {strcpy(temppri, primexp); }  PrimaryExpressio
           | PrimaryExpression '-' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s - %s",temppri, primexp);}
           | PrimaryExpression '*' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s * %s",temppri, primexp);}
           | PrimaryExpression '/' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s / %s",temppri, primexp);}
-          | PrimaryExpression '.' IDENTIFIER { sprintf(expr, "%s.%s", $1, $3); }
-          | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')' 
-          | ArrayExpression
+          | PrimaryExpression '.' IDENTIFIER { sprintf(expr, "%s.%s", primexp, $3); }
+          | PrimaryExpression '.' IDENTIFIER '(' {strcpy(temppri, primexp); } ExpressionList ')' { sprintf( expr, "%s.%s( %s)", temppri, $3, $6); }
+          | ArrayExpression             { strcpy( expr, arrayexpr); }
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
-          | Expression '+' PrimaryExpression
-          | PrimaryExpression
+          | Expression '+' PrimaryExpression { sprintf( expr, "%s + %s", expr, primexp); }
+          | PrimaryExpression { strcpy( expr, primexp); }
           ;
 
-ArrayExpression: PrimaryExpression '[' {strcpy(temppri, primexp);} PrimaryExpression ']'
+ArrayExpression: PrimaryExpression '[' {strcpy(temppri, primexp);} PrimaryExpression ']' { sprintf( arrayexpr, "%s[%s]", temppri, $4) ; }
 
 PrimaryExpression: INTVAL           {sprintf(primexp, "%d"); }
                  | BOOLVAL          {strcpy(primexp, $1);} 

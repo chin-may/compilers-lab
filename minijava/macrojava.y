@@ -37,14 +37,19 @@ int yydebug = 1;
 %token EXTENDS
 %token STRING
 
+%type <id> MacroDefinitionList
+%type <id> MainClass
+%type <id> TypeDeclarationList
+
+
 %% 
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList 
+Goal: MacroDefinitionList MainClass TypeDeclarationList //{printf("Goal Reached");}
 
 MacroDefinitionList: /*empty*/
-                   | MacroDefinitionList MacroDefinition
+                   | MacroDefinitionList MacroDefinition //{printf("Goal Reached");}
                    ;
 
 
@@ -79,6 +84,7 @@ MethodDeclarationList:/*empty*/
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
          IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
+            {printf("Goal Reached");}
          ;
 
 //StatementList: /*empty*/
@@ -130,6 +136,7 @@ Expression: PrimaryExpression '&' PrimaryExpression
           | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
           | ArrayExpression
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
+          | Expression '+' PrimaryExpression
           | PrimaryExpression
           ;
 
@@ -149,12 +156,13 @@ MacroDefinition: MacroDefStatement
                | MacroDefExpression
                ;
 
-MacroDefStatement: '#' DEFINE IDENTIFIER '{' StatementList '}'
+MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
                  ;
-MacroDefExpression: '#' DEFINE IDENTIFIER '(' Expression ')'
+MacroDefExpression: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '(' Expression ')'
                   ;
 
 IdentifierList: /*empty*/
+              | IDENTIFIER
               | MidIdentifier ',' IDENTIFIER
               ;
 

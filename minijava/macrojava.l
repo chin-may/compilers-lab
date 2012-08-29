@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<string.h>
 #include "macrojava.tab.h"
+
 %}
 
 %%

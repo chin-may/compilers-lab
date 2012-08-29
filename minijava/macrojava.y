@@ -1,12 +1,38 @@
 %{
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 extern FILE* yyin;
 
 extern int yyparse();
 extern int yylineno;
 int yydebug = 1;
+
+char* curr;
+char* temp;
+char* primexp;
+char* expr;
+char* explist;
+char midexp[10000];
+char midexp[10000];
+char temppri[10000];
 %}
+
+
+%initial-action
+{   
+        curr = malloc(10000000);
+        curr[0] = '\0';
+        temp = malloc(1000000);
+        primexp = malloc(1000);
+        expr = malloc(1000);
+        primexp[0] = '\0';
+        temppri[0] = '\0';
+        expr[0] = '\0';
+        midexp[0] = '\0';
+
+};
+
 
 %union{
 	int ival; // integers
@@ -21,35 +47,40 @@ int yydebug = 1;
 %token <kw> KEYWORD
 %token <op> OPERATOR
 %token <id> IDENTIFIER
-%token THIS
-%token NEW
-%token RETURN
-%token CLASS
-%token DEFINE
-%token PUBLIC
-%token STATIC
-%token VOID
-%token INT
-%token BOOLEAN
-%token IF
-%token ELSE
-%token WHILE
-%token EXTENDS
-%token STRING
+%token <id> THIS
+%token <id> NEW
+%token <id> RETURN
+%token <id> CLASS
+%token <id> DEFINE
+%token <id> PUBLIC
+%token <id> STATIC
+%token <id> VOID
+%token <id> INT
+%token <id> BOOLEAN
+%token <id> IF
+%token <id> ELSE
+%token <id> WHILE
+%token <id> EXTENDS
+%token <id> STRING
 
 %type <id> MacroDefinitionList
 %type <id> MainClass
 %type <id> TypeDeclarationList
+%type <id> Statement
+%type <id> Expression
+%type <id> PrimaryExpression
+%type <id> ExpressionList
+
 
 
 %% 
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList //{printf("Goal Reached");}
+Goal: MacroDefinitionList MainClass TypeDeclarationList //{printf("%s",curr);}
 
 MacroDefinitionList: /*empty*/
-                   | MacroDefinitionList MacroDefinition //{printf("Goal Reached");}
+                   | MacroDefinitionList MacroDefinition
                    ;
 
 
@@ -84,7 +115,6 @@ MethodDeclarationList:/*empty*/
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
          IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
-            {printf("Goal Reached");}
          ;
 
 //StatementList: /*empty*/
@@ -108,7 +138,9 @@ MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclar
                  | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  ;
 Statement: '{' StatementList '}'
-         | IDENTIFIER '=' Expression ';'
+         | IDENTIFIER '=' Expression ';'    {  // printf("%s = %d ; \n",$1,$3 );
+                                               // strcat(curr, temp);
+                                                }
          | ArrayExpression '=' Expression ';'
          | IF '(' Expression ')' Statement
          | IF '(' Expression ')' Statement ELSE Statement
@@ -118,38 +150,38 @@ Statement: '{' StatementList '}'
          ;
 
 ExpressionList: /*empty*/
-              | Expression
-              | MidExpression ',' Expression
+              | Expression { strcpy(explist, expr); }
+              | MidExpression ',' Expression { strcpy(explist, midexp); strcat(explist, ", ");  strcat(explist, expr);} 
               ;
 
-MidExpression: Expression
-             | MidExpression ',' Expression
+MidExpression: Expression { strcpy(midexp, $1); }
+             | MidExpression ',' Expression { strcat(midexp, ", "); strcat(midexp, expr);}
              ;
 
-Expression: PrimaryExpression '&' PrimaryExpression
-          |	PrimaryExpression '<' PrimaryExpression
-          | PrimaryExpression '+' PrimaryExpression
-          | PrimaryExpression '-' PrimaryExpression
-          | PrimaryExpression '*' PrimaryExpression
-          | PrimaryExpression '/' PrimaryExpression
-          | PrimaryExpression '.' IDENTIFIER
-          | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')'
+Expression: PrimaryExpression '&' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s & %s",temppri, primexp);}
+          |	PrimaryExpression '<' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s < %s",temppri, primexp);}
+          | PrimaryExpression '+' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s + %s",temppri, primexp);}
+          | PrimaryExpression '-' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s - %s",temppri, primexp);}
+          | PrimaryExpression '*' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s * %s",temppri, primexp);}
+          | PrimaryExpression '/' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s / %s",temppri, primexp);}
+          | PrimaryExpression '.' IDENTIFIER { sprintf(expr, "%s.%s", $1, $3); }
+          | PrimaryExpression '.' IDENTIFIER '(' ExpressionList ')' 
           | ArrayExpression
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
           | Expression '+' PrimaryExpression
           | PrimaryExpression
           ;
 
-ArrayExpression: PrimaryExpression '[' PrimaryExpression ']'
+ArrayExpression: PrimaryExpression '[' {strcpy(temppri, primexp);} PrimaryExpression ']'
 
-PrimaryExpression: INTVAL
-                 | BOOLVAL
-                 | IDENTIFIER
-                 | THIS
-                 | NEW INT '[' Expression ']'
-                 | NEW IDENTIFIER '(' ')'
-                 | '!' Expression
-                 | '(' Expression ')'
+PrimaryExpression: INTVAL           {sprintf(primexp, "%d"); }
+                 | BOOLVAL          {strcpy(primexp, $1);} 
+                 | IDENTIFIER       {strcpy(primexp, $1);} 
+                 | THIS             {strcpy(primexp, $1);}
+                 | NEW INT '[' Expression ']' { sprintf(primexp, "new int [ %s ]", $4);}
+                 | NEW IDENTIFIER '(' ')'     { sprintf(primexp, "new %s()",$2);}
+                 | '!' Expression             { sprintf(primexp, "! %s ", $2);}
+                 | '(' Expression ')'         { sprintf(primexp, "( %s )", $2);}
                  ;
 
 MacroDefinition: MacroDefStatement

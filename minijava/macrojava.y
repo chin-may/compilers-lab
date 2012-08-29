@@ -18,6 +18,8 @@ char* temppri;
 char* arrayexpr;
 char* tempstm;
 char* stmnt;
+char* stmlist;
+char* midstm;
 %}
 
 
@@ -34,6 +36,10 @@ char* stmnt;
         arrayexpr = malloc(1000);
         tempstm = malloc(1000);
         stmnt = malloc(1000);
+        stmlist = malloc(1000);
+        midstm = malloc(1000);
+
+
         primexp[0] = '\0';
         temppri[0] = '\0';
         expr[0] = '\0';
@@ -130,13 +136,13 @@ MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']'
 //StatementList: /*empty*/
 //             | StatementList  Statement 
 
-StatementList: /*empty*/
-             | Statement
-             | MidStatement Statement
+StatementList: /*empty*/ { strcpy( stmlist, " \0" ); }
+             | Statement { strcpy(stmlist, stmnt); }
+             | MidStatement Statement { strcpy(stmlist, midstm ); strcat(stmlist, stmnt);}
              ;
 
-MidStatement: Statement
-            | MidStatement Statement
+MidStatement: Statement { strcpy(midstm, stmnt); }
+            | MidStatement Statement { strcat(midstm, stmnt );}
             ;
 
 Type: INT '['']'
@@ -147,9 +153,9 @@ Type: INT '['']'
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
                  ;
-Statement: '{' StatementList '}' { printf( "\n%d {\n %s \n}\n",yylineno, stmnt); }
-         | IDENTIFIER '=' Expression ';'    { sprintf( stmnt, "%s = %s", $1, expr);  }
-         | ArrayExpression '=' Expression ';' { sprintf( stmnt, "%s = %s", arrayexpr, expr); }
+Statement: '{' StatementList '}' { printf( "\n%d {\n %s \n}\n",yylineno, stmlist); }
+         | IDENTIFIER '=' Expression ';'    { sprintf( stmnt, "%s = %s ;\n", $1, expr);  }
+         | ArrayExpression '=' Expression ';' { sprintf( stmnt, "%s = %s ;\n", arrayexpr, expr); }
          | IF '(' Expression ')' Statement   { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s", expr, temp ); }
          | IF '(' Expression ')' Statement ELSE { strcpy( tempstm, stmnt ); } 
              Statement { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s else %s", expr, tempstm, temp ); }

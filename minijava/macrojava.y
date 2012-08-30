@@ -9,82 +9,16 @@ extern int yyparse();
 extern int yylineno;
 int yydebug = 1;
 
-char* curr;
 char* temp;
-char* primexp;
-char* expr;
-char* explist;
-char* midexp;
-char* temppri;
-char* arrayexpr;
-char* tempstm;
-char* stmnt;
-char* stmlist;
-char* midstm;
-
-char* typedecl;
-char* typedec;
-char* vardecl;
-char* methoddeclst;
-char* methoddec;
-char* typest;
-char* param;
-char* paraml;
-char* mainclst;
-char* midparam;
-
 char* buff;
 %}
 
 
-%initial-action
-{   
-        curr = malloc(10000000);
-        curr[0] = '\0';
-        temp = malloc(1000000);
-        primexp = malloc(1000);
-        expr = malloc(1000);
-        explist = malloc(1000);
-        midexp = malloc(1000);
-        temppri = malloc(1000);
-        arrayexpr = malloc(1000);
-        tempstm = malloc(1000);
-        stmnt = malloc(1000);
-        stmlist = malloc(1000);
-        midstm = malloc(1000);
-
-        typedecl = malloc( 1000 );
-        typedec = malloc( 1000 );
-        vardecl = malloc( 1000 );
-        methoddeclst = malloc(1000 );
-        methoddec = malloc( 1000 );
-        typest = malloc( 1000 );
-        param = malloc( 1000 );
-        paraml = malloc( 1000 );
-        mainclst = malloc( 1000 );
-        midparam = malloc( 1000 );
-        
-        buff = malloc( 100000 );
-
-        typedecl[0] = '\0';
-        typedec[0] = '\0';
-        vardecl[0] = '\0';
-        methoddeclst[0] = '\0';
-        methoddec[0] = '\0';
-        typest[0] = '\0';
-        param[0] = '\0';
-        paraml[0] = '\0';
-        mainclst[0] = '\0';
-        midparam[0] = '\0';
-
-        primexp[0] = '\0';
-        temppri[0] = '\0';
-        expr[0] = '\0';
-        midexp[0] = '\0';
-        arrayexpr[0] = '\0';
-        explist[0] = '\0';
-
-        buff[0] = '\0';
+%initial-action{   
+       buff = malloc( 100000 );
+       buff[0] = '\0';
+       temp = malloc( 100000 );
+       temp[0] = '\0';
 
 };
 
@@ -237,14 +171,16 @@ Type: INT '['']' { strcpy( buff, "int[]\0" ); $$ = strdup(buff); }
     ;
 
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-{
-    sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
-}
+        {
+            sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+            $$ = strdup( buff );
+        }
 
-                 | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-{ 
-    sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
-}
+        | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+        { 
+            sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+            $$ = strdup( buff );
+        }
                  ;
 Statement: '{' StatementList '}'
          {
@@ -267,7 +203,7 @@ Statement: '{' StatementList '}'
          }
          | IF '(' Expression ')' Statement ELSE Statement 
          {
-             sprintf( buff, "if ( %s ) %s else %s", expr, tempstm, temp );
+             sprintf( buff, "if ( %s ) %s else %s", $3, $5, $7 );
              $$ = strdup(buff);
          }
          | WHILE '(' Expression ')' Statement 
@@ -276,17 +212,22 @@ Statement: '{' StatementList '}'
              $$ = strdup(buff); 
          }
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
-         | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' { sprintf( buff, "%s.%s( %s )", $1, $3, $5 ); $$ = strdup(buff); }
+
+         | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' 
+         {
+             sprintf( buff, "%s.%s( %s )", $1, $3, $5 );
+             $$ = strdup(buff);
+         }
          ;
 
-ExpressionList: /*empty*/ { $$ = strdup(" \0");}
+ExpressionList: /*empty*/ { $$ = strdup(" ");}
               | Expression { $$ = strdup($1); }
               | MidExpression ',' Expression 
               {
-              strcpy(buff, $1); 
-              strcat(buff, ", ");  
-              strcat(buff, $3); 
-              $$ = strdup(buff);
+                  strcpy(buff, $1); 
+                  strcat(buff, ", ");  
+                  strcat(buff, $3); 
+                  $$ = strdup(buff);
               } 
               ;
 
@@ -303,16 +244,31 @@ Expression: PrimaryExpression '&'   PrimaryExpression
               sprintf(buff, "%s & %s", $1, $3);
               $$ = strdup(buff); 
           }
-          |	PrimaryExpression '<'   PrimaryExpression {sprintf(buff, "%s < %s", $1, $3);  
-              $$ = strdup(buff); }
-          | PrimaryExpression '+'   PrimaryExpression {sprintf(buff, "%s + %s", $1, $3);  
-              $$ = strdup(buff); }
-          | PrimaryExpression '-'   PrimaryExpression {sprintf(buff, "%s - %s", $1, $3);  
-              $$ = strdup(buff); }
-          | PrimaryExpression '*'   PrimaryExpression {sprintf(buff, "%s * %s", $1, $3);  
-              $$ = strdup(buff); }
-          | PrimaryExpression '/'   PrimaryExpression {sprintf(buff, "%s / %s", $1, $3);  
-              $$ = strdup(buff); }
+          |	PrimaryExpression '<'   PrimaryExpression 
+          {
+              sprintf(buff, "%s < %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | PrimaryExpression '+'   PrimaryExpression 
+          {
+              sprintf(buff, "%s + %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | PrimaryExpression '-'   PrimaryExpression 
+          {
+              sprintf(buff, "%s - %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | PrimaryExpression '*'   PrimaryExpression 
+          {
+              sprintf(buff, "%s * %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | PrimaryExpression '/'   PrimaryExpression 
+          {
+              sprintf(buff, "%s / %s", $1, $3);  
+              $$ = strdup(buff);
+          }
           | PrimaryExpression '.' IDENTIFIER 
           { 
               sprintf(buff, "%s.%s", $1, $3); 
@@ -320,11 +276,15 @@ Expression: PrimaryExpression '&'   PrimaryExpression
           }
           | PrimaryExpression '.' IDENTIFIER '('  ExpressionList ')' 
           {
-              sprintf( buff, "%s.( %s)", $1, $3, $5);
+              sprintf( buff, "%s.%s( %s)", $1, $3, $5);
               $$ = strdup(buff);
           }
           | ArrayExpression             { $$ = strdup($1); }
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
+          {
+              sprintf(buff, "%s ( %s )", $1, $3);
+              $$ = strdup(buff); 
+          }
           | Expression '+' PrimaryExpression 
           {
               sprintf( buff, "%s + %s", $1, $3);

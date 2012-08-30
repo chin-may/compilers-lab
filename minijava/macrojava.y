@@ -131,10 +131,11 @@ MethodDeclarationList:/*empty*/
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
          IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
+
+{   if( strcmp( $15, "System" ) || strcmp( $17, "out" ) || strcmp( $19, "println" ) ) yyerror( "System.out.println not found" );
+    sprintf( mainclst, "class %s { public static void main ( String[] %s ) { System.out.println( %s ); } }", $2, $12, expr ); } 
          ;
 
-//StatementList: /*empty*/
-//             | StatementList  Statement 
 
 StatementList: /*empty*/ { strcpy( stmlist, " \0" ); }
              | Statement { strcpy(stmlist, stmnt); }
@@ -145,15 +146,17 @@ MidStatement: Statement { strcpy(midstm, stmnt); }
             | MidStatement Statement { strcat(midstm, stmnt );}
             ;
 
-Type: INT '['']'
-    | BOOLEAN
-    | INT
+Type: INT '['']' { strcpy( typest, "int[]\0" ); }
+    | BOOLEAN    { strcpy( typest, "boolean\0" ); }
+    | INT        { strcpy( typest, "int\0" ); }
     ;
 
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+{ sprintf( methoddec, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, paraml, vardecl, stmlist, expr ); }
                  | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
+{ sprintf( methoddec, "public %s %s ( %s ) {\n %s %s return %s;\n }", typest, $3, paraml, vardecl, stmlist, expr ); }
                  ;
-Statement: '{' StatementList '}' { printf( "\n%d {\n %s \n}\n",yylineno, stmlist); }
+Statement: '{' StatementList '}' { sprintf( stmnt, "\n{\n %s \n}\n", stmlist ); }
          | IDENTIFIER '=' Expression ';'    { sprintf( stmnt, "%s = %s ;\n", $1, expr);  }
          | ArrayExpression '=' Expression ';' { sprintf( stmnt, "%s = %s ;\n", arrayexpr, expr); }
          | IF '(' Expression ')' Statement   { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s", expr, temp ); }
@@ -161,7 +164,7 @@ Statement: '{' StatementList '}' { printf( "\n%d {\n %s \n}\n",yylineno, stmlist
              Statement { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s else %s", expr, tempstm, temp ); }
          | WHILE '(' Expression ')' Statement { strcpy( temp, stmnt );  sprintf( stmnt, "while ( %s ) %s", expr, temp ); }
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
-         | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';'
+         | Expression '.' IDENTIFIER  '(' { strcpy( temp, expr ); } ExpressionList ')' ';' { sprintf( stmnt, "%s.%s( %s )", temp, $3, explist ); }
          ;
 
 ExpressionList: /*empty*/ { strcpy(explist, " \0");}

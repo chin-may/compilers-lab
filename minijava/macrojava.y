@@ -20,11 +20,17 @@ char* tempstm;
 char* stmnt;
 char* stmlist;
 char* midstm;
+
 char* typedecl;
 char* typedec;
 char* vardecl;
-char* vardecl;
-char* midstm;
+char* methoddeclst;
+char* methoddec;
+char* typest;
+char* param;
+char* paraml;
+char* mainclst;
+char* midparam;
 %}
 
 
@@ -44,6 +50,27 @@ char* midstm;
         stmlist = malloc(1000);
         midstm = malloc(1000);
 
+        typedecl = malloc( 1000 );
+        typedec = malloc( 1000 );
+        vardecl = malloc( 1000 );
+        methoddeclst = malloc(1000 );
+        methoddec = malloc( 1000 );
+        typest = malloc( 1000 );
+        param = malloc( 1000 );
+        paraml = malloc( 1000 );
+        mainclst = malloc( 1000 );
+        midparam = malloc( 1000 );
+
+        typedecl[0] = '\0';
+        typedec[0] = '\0';
+        vardecl[0] = '\0';
+        methoddeclst[0] = '\0';
+        methoddec[0] = '\0';
+        typest[0] = '\0';
+        param[0] = '\0';
+        paraml[0] = '\0';
+        mainclst[0] = '\0';
+        midparam[0] = '\0';
 
         primexp[0] = '\0';
         temppri[0] = '\0';
@@ -98,7 +125,7 @@ char* midstm;
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", $1, $2, $3 ); }
+Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "macros go here\n", mainclst, typedecl ); }
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition

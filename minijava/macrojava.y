@@ -162,7 +162,7 @@ StatementList: /*empty*/ { strcpy( buff, " " ); $$ = strdup(buff); }
              ;
 
 MidStatement: Statement { strcpy(buff, $1); $$ = strdup(buff); }
-            | MidStatement Statement { sprintf(buff, "%s %s", $1, $2); }
+            | MidStatement Statement { sprintf(buff, "%s %s", $1, $2); $$ = strdup(buff);}
             ;
 
 Type: INT '['']' { strcpy( buff, "int[]\0" ); $$ = strdup(buff); }
@@ -215,7 +215,7 @@ Statement: '{' StatementList '}'
 
          | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' 
          {
-             sprintf( buff, "%s.%s( %s )", $1, $3, $5 );
+             sprintf( buff, "%s.%s( %s );\n", $1, $3, $5 );
              $$ = strdup(buff);
          }
          ;

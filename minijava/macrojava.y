@@ -20,6 +20,11 @@ char* tempstm;
 char* stmnt;
 char* stmlist;
 char* midstm;
+char* typedecl;
+char* typedec;
+char* vardecl;
+char* vardecl;
+char* midstm;
 %}
 
 
@@ -93,40 +98,46 @@ char* midstm;
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList //{printf("%s",curr);}
+Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", $1, $2, $3 ); }
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
                    ;
 
 
-TypeDeclarationList: /*empty*/
+TypeDeclarationList: /*empty*/  { strcpy( typedecl, " \0" ); }
                    | TypeDeclarationList TypeDeclaration
+                   { strcat( typedecl, typedec );  }
                    ;
 
 TypeDeclaration: CLASS IDENTIFIER '{' VarDeclarationList  MethodDeclarationList '}'
+{ sprintf( typedecl, "class %s { \n %s %s \n} ", $2, vardecl, methoddeclst ); }
+
                | CLASS IDENTIFIER EXTENDS IDENTIFIER '{' VarDeclarationList MethodDeclarationList '}'
+{ sprintf( typedecl, "class %s extends %s { \n %s %s \n} ", $2, $4, vardecl, methoddeclst ); }
+
                ;
 
 VarDeclarationList: /*empty*/
-                  | VarDeclarationList  Type IDENTIFIER ';'
-                  | VarDeclarationList  IDENTIFIER IDENTIFIER ';'
+                  | VarDeclarationList  Type IDENTIFIER ';'{ strcpy(temp, vardecl); sprintf( vardecl, "%s %s %s ;\n", temp, typest, $3 ); }
+                  | VarDeclarationList  IDENTIFIER IDENTIFIER ';' { strcpy(temp, vardecl); sprintf( vardecl, "%s %s %s ;\n", temp, $2, $3 ); }
                   ;
 
-Param: Type IDENTIFIER
-     | IDENTIFIER IDENTIFIER
+Param: Type IDENTIFIER       { strcat(param, typest); strcat(param, $2); }  
+     | IDENTIFIER IDENTIFIER { strcat(param, $1); strcat(param, $2); }
      ;
-ParamList: /*empty*/
-         | Param
-         | MidParam ',' Param
+ParamList: /*empty*/            { strcpy(paraml, " \0"); }
+         | Param                { strcpy(paraml, param); }
+         | MidParam ',' Param   { sprintf(paraml, "%s , %s", midparam, param); }
          ;
 
-MidParam: Param
-        | MidParam ',' Param
+MidParam: Param                 { strcpy(midparam, param); }
+        | MidParam ',' Param    { strcpy(temp, midparam); sprintf(midparam, "%s , %s", temp, param); }
         ;
 
-MethodDeclarationList:/*empty*/
-                     | MethodDeclarationList  MethodDeclaration 
+MethodDeclarationList:/*empty*/ { strcpy(methoddeclst, " \0"); }
+                     | MethodDeclarationList  MethodDeclaration  
+            { strcat(methoddeclst, methoddec); }
                      ;
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 

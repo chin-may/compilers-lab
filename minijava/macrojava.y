@@ -4,6 +4,7 @@
 #include<string.h>
 extern FILE* yyin;
 
+void yyerror(const char *s);
 extern int yyparse();
 extern int yylineno;
 int yydebug = 1;
@@ -31,6 +32,8 @@ char* param;
 char* paraml;
 char* mainclst;
 char* midparam;
+
+char* buff;
 %}
 
 
@@ -60,6 +63,8 @@ char* midparam;
         paraml = malloc( 1000 );
         mainclst = malloc( 1000 );
         midparam = malloc( 1000 );
+        
+        buff = malloc( 100000 );
 
         typedecl[0] = '\0';
         typedec[0] = '\0';
@@ -78,6 +83,8 @@ char* midparam;
         midexp[0] = '\0';
         arrayexpr[0] = '\0';
         explist[0] = '\0';
+
+        buff[0] = '\0';
 
 };
 
@@ -120,124 +127,226 @@ char* midparam;
 %type <id> ExpressionList
 
 
+%type <id> TypeDeclaration
+%type <id> VarDeclarationList
+%type <id> Param
+%type <id> ParamList
+%type <id> MidParam
+%type <id> MethodDeclarationList
+%type <id> MethodDeclaration
+%type <id> StatementList
+%type <id> MidStatement
+%type <id> Type
+%type <id> ArrayExpression
+
+%type <id> MidExpression
+
+
 
 %% 
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "macros go here\n", mainclst, typedecl ); }
+Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "macros go here\n", $2, $3 ); }
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
                    ;
 
 
-TypeDeclarationList: /*empty*/  { strcpy( typedecl, " \0" ); }
+TypeDeclarationList: /*empty*/  { strcpy( buff , " \0" ); $$ = strdup(buff); }
                    | TypeDeclarationList TypeDeclaration
-                   { strcat( typedecl, typedec );  }
+                       { sprintf( buff ,"%s %s ", $1, $2 ); $$ = strdup(buff);  }
                    ;
 
 TypeDeclaration: CLASS IDENTIFIER '{' VarDeclarationList  MethodDeclarationList '}'
-{ sprintf( typedecl, "class %s { \n %s %s \n} ", $2, vardecl, methoddeclst ); }
+        {
+            sprintf( buff , "class %s { \n %s %s \n} ", $2, $4, $5 );
+            $$ = strdup(buff); 
+        }
 
                | CLASS IDENTIFIER EXTENDS IDENTIFIER '{' VarDeclarationList MethodDeclarationList '}'
-{ sprintf( typedecl, "class %s extends %s { \n %s %s \n} ", $2, $4, vardecl, methoddeclst ); }
+        {
+            sprintf( buff , "class %s extends %s { \n %s %s \n} ", $2, $4, $6, $7 ); 
+            $$ = strdup(buff); 
+        }
 
                ;
 
-VarDeclarationList: /*empty*/
-                  | VarDeclarationList  Type IDENTIFIER ';'{ strcpy(temp, vardecl); sprintf( vardecl, "%s %s %s ;\n", temp, typest, $3 ); }
-                  | VarDeclarationList  IDENTIFIER IDENTIFIER ';' { strcpy(temp, vardecl); sprintf( vardecl, "%s %s %s ;\n", temp, $2, $3 ); }
+VarDeclarationList: /*empty*/ { $$ = strdup(" \0"); }
+                  | VarDeclarationList  Type IDENTIFIER ';'
+                      {
+                          sprintf( buff , "%s %s %s ;\n", $1, $2, $3 );
+                          $$ = strdup(buff);  
+                      }
+                  | VarDeclarationList  IDENTIFIER IDENTIFIER ';' 
+                      { 
+                          sprintf( buff , "%s %s %s ;\n", $1, $2, $3 );
+                          $$ = strdup(buff);  
+                      }
                   ;
 
-Param: Type IDENTIFIER       { strcat(param, typest); strcat(param, $2); }  
-     | IDENTIFIER IDENTIFIER { strcat(param, $1); strcat(param, $2); }
+Param: Type IDENTIFIER       { sprintf(buff, " %s %s ", $1, $2); $$ = strdup(buff); }
+     | IDENTIFIER IDENTIFIER { sprintf(buff, " %s %s ", $1, $2); $$ = strdup(buff); }
      ;
-ParamList: /*empty*/            { strcpy(paraml, " \0"); }
-         | Param                { strcpy(paraml, param); }
-         | MidParam ',' Param   { sprintf(paraml, "%s , %s", midparam, param); }
+
+ParamList: /*empty*/            { strcpy(buff, " \0");  $$ = strdup(buff);}
+         | Param                { strcpy(buff, $1);  $$ = strdup(buff);}
+         | MidParam ',' Param   { sprintf(buff, "%s , %s", $1, $3); $$ = strdup(buff); }
          ;
 
-MidParam: Param                 { strcpy(midparam, param); }
-        | MidParam ',' Param    { strcpy(temp, midparam); sprintf(midparam, "%s , %s", temp, param); }
+MidParam: Param                 { strcpy(buff, $1);  $$ = strdup(buff);}
+        | MidParam ',' Param    { sprintf(buff, "%s , %s", $1, $3); $$ = strdup(buff); }
         ;
 
-MethodDeclarationList:/*empty*/ { strcpy(methoddeclst, " \0"); }
-                     | MethodDeclarationList  MethodDeclaration  
-            { strcat(methoddeclst, methoddec); }
+MethodDeclarationList:/*empty*/ 
+                     {
+                         strcpy(buff, " \0"); 
+                         $$ = strdup(buff); 
+                     }
+                     | MethodDeclarationList  MethodDeclaration
+                     { 
+                         sprintf(buff, "%s %s", $1, $2); 
+                         $$ = strdup(buff); 
+                     }
                      ;
 
 MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']' 
          IDENTIFIER')' '{' IDENTIFIER '.'IDENTIFIER'.'IDENTIFIER '(' Expression ')' ';' '}' '}'
-
-{   if( strcmp( $15, "System" ) || strcmp( $17, "out" ) || strcmp( $19, "println" ) ) yyerror( "System.out.println not found" );
-    sprintf( mainclst, "class %s { public static void main ( String[] %s ) { System.out.println( %s ); } }", $2, $12, expr ); } 
+{
+    if( strcmp( $15, "System" ) || strcmp( $17, "out" ) || strcmp( $19, "println" ) ) 
+        yyerror( "System.out.println not found" );
+    sprintf( buff, "class %s { public static void main ( String[] %s ) { System.out.println( %s ); } }", $2, $12, $21 ); 
+    $$ = strdup(buff); 
+} 
          ;
 
 
-StatementList: /*empty*/ { strcpy( stmlist, " \0" ); }
-             | Statement { strcpy(stmlist, stmnt); }
-             | MidStatement Statement { strcpy(stmlist, midstm ); strcat(stmlist, stmnt);}
+StatementList: /*empty*/ { strcpy( buff, " " ); $$ = strdup(buff); }
+             | Statement { strcpy(buff, $1); $$ = strdup(buff); }
+             | MidStatement Statement { strcpy(buff, $1 ); strcat(buff, $2);}
              ;
 
-MidStatement: Statement { strcpy(midstm, stmnt); }
-            | MidStatement Statement { strcat(midstm, stmnt );}
+MidStatement: Statement { strcpy(buff, $1); $$ = strdup(buff); }
+            | MidStatement Statement { sprintf(buff, "%s %s", $1, $2); }
             ;
 
-Type: INT '['']' { strcpy( typest, "int[]\0" ); }
-    | BOOLEAN    { strcpy( typest, "boolean\0" ); }
-    | INT        { strcpy( typest, "int\0" ); }
+Type: INT '['']' { strcpy( buff, "int[]\0" ); $$ = strdup(buff); }
+    | BOOLEAN    { strcpy( buff, "boolean\0" );  $$ = strdup(buff);}
+    | INT        { strcpy( buff, "int\0" );  $$ = strdup(buff);}
     ;
 
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-{ sprintf( methoddec, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, paraml, vardecl, stmlist, expr ); }
+{
+    sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+}
+
                  | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
-{ sprintf( methoddec, "public %s %s ( %s ) {\n %s %s return %s;\n }", typest, $3, paraml, vardecl, stmlist, expr ); }
+{ 
+    sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+}
                  ;
-Statement: '{' StatementList '}' { sprintf( stmnt, "\n{\n %s \n}\n", stmlist ); }
-         | IDENTIFIER '=' Expression ';'    { sprintf( stmnt, "%s = %s ;\n", $1, expr);  }
-         | ArrayExpression '=' Expression ';' { sprintf( stmnt, "%s = %s ;\n", arrayexpr, expr); }
-         | IF '(' Expression ')' Statement   { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s", expr, temp ); }
-         | IF '(' Expression ')' Statement ELSE { strcpy( tempstm, stmnt ); } 
-             Statement { strcpy( temp, stmnt );  sprintf( stmnt, "if ( %s ) %s else %s", expr, tempstm, temp ); }
-         | WHILE '(' Expression ')' Statement { strcpy( temp, stmnt );  sprintf( stmnt, "while ( %s ) %s", expr, temp ); }
+Statement: '{' StatementList '}'
+         {
+             sprintf( buff, "\n{\n %s \n}\n", $2 ); $$ = strdup(buff); 
+         }
+         | IDENTIFIER '=' Expression ';'    
+         {
+             sprintf( buff, "%s = %s ;\n", $1, $3);
+             $$ = strdup(buff);
+         }
+         | ArrayExpression '=' Expression ';'
+         { 
+             sprintf( buff, "%s = %s ;\n", $1, $3);  
+             $$ = strdup(buff);
+         }
+         | IF '(' Expression ')' Statement
+         {
+             sprintf( buff, "if ( %s ) %s", $3, $5 );  
+             $$ = strdup(buff);
+         }
+         | IF '(' Expression ')' Statement ELSE Statement 
+         {
+             sprintf( buff, "if ( %s ) %s else %s", expr, tempstm, temp );
+             $$ = strdup(buff);
+         }
+         | WHILE '(' Expression ')' Statement 
+         { 
+             sprintf( buff, "while ( %s ) %s", $3, $5  );
+             $$ = strdup(buff); 
+         }
          | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
-         | Expression '.' IDENTIFIER  '(' { strcpy( temp, expr ); } ExpressionList ')' ';' { sprintf( stmnt, "%s.%s( %s )", temp, $3, explist ); }
+         | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' { sprintf( buff, "%s.%s( %s )", $1, $3, $5 ); $$ = strdup(buff); }
          ;
 
-ExpressionList: /*empty*/ { strcpy(explist, " \0");}
-              | Expression { strcpy(explist, expr); }
-              | MidExpression ',' Expression { strcpy(explist, midexp); strcat(explist, ", ");  strcat(explist, expr);} 
+ExpressionList: /*empty*/ { $$ = strdup(" \0");}
+              | Expression { $$ = strdup($1); }
+              | MidExpression ',' Expression 
+              {
+              strcpy(buff, $1); 
+              strcat(buff, ", ");  
+              strcat(buff, $3); 
+              $$ = strdup(buff);
+              } 
               ;
 
-MidExpression: Expression { strcpy(midexp, expr); }
-             | MidExpression ',' Expression { strcat(midexp, ", "); strcat(midexp, expr);}
+MidExpression: Expression { $$ = strdup($1); }
+             | MidExpression ',' Expression 
+             {
+                 sprintf( buff, "%s , %s", $1, $3);
+                 $$ = strdup(buff);
+             }
              ;
 
-Expression: PrimaryExpression '&' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s & %s",temppri, primexp);  }
-          |	PrimaryExpression '<' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s < %s",temppri, primexp);  }
-          | PrimaryExpression '+' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s + %s",temppri, primexp);  }
-          | PrimaryExpression '-' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s - %s",temppri, primexp);  }
-          | PrimaryExpression '*' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s * %s",temppri, primexp);  }
-          | PrimaryExpression '/' {strcpy(temppri, primexp); }  PrimaryExpression {sprintf(expr, "%s / %s",temppri, primexp);  }
-          | PrimaryExpression '.' IDENTIFIER { sprintf(expr, "%s.%s", primexp, $3); }
-          | PrimaryExpression '.' IDENTIFIER '(' {strcpy(temppri, primexp); } ExpressionList ')' {sprintf( expr, "%s.( %s)", temppri, $3, explist); }
-          | ArrayExpression             { strcpy( expr, arrayexpr); }
+Expression: PrimaryExpression '&'   PrimaryExpression 
+          {
+              sprintf(buff, "%s & %s", $1, $3);
+              $$ = strdup(buff); 
+          }
+          |	PrimaryExpression '<'   PrimaryExpression {sprintf(buff, "%s < %s", $1, $3);  
+              $$ = strdup(buff); }
+          | PrimaryExpression '+'   PrimaryExpression {sprintf(buff, "%s + %s", $1, $3);  
+              $$ = strdup(buff); }
+          | PrimaryExpression '-'   PrimaryExpression {sprintf(buff, "%s - %s", $1, $3);  
+              $$ = strdup(buff); }
+          | PrimaryExpression '*'   PrimaryExpression {sprintf(buff, "%s * %s", $1, $3);  
+              $$ = strdup(buff); }
+          | PrimaryExpression '/'   PrimaryExpression {sprintf(buff, "%s / %s", $1, $3);  
+              $$ = strdup(buff); }
+          | PrimaryExpression '.' IDENTIFIER 
+          { 
+              sprintf(buff, "%s.%s", $1, $3); 
+              $$ = strdup(buff); 
+          }
+          | PrimaryExpression '.' IDENTIFIER '('  ExpressionList ')' 
+          {
+              sprintf( buff, "%s.( %s)", $1, $3, $5);
+              $$ = strdup(buff);
+          }
+          | ArrayExpression             { $$ = strdup($1); }
           | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
-          | Expression '+' PrimaryExpression { sprintf( expr, "%s + %s", expr, primexp); }
-          | PrimaryExpression { strcpy( expr, primexp); }
+          | Expression '+' PrimaryExpression 
+          {
+              sprintf( buff, "%s + %s", $1, $3);
+              $$ = strdup(buff);
+          }
+          | PrimaryExpression 
+          {
+              strcpy( buff, $1);
+              $$ = strdup(buff);
+          }
           ;
 
-ArrayExpression: PrimaryExpression '[' {strcpy(temppri, primexp);} PrimaryExpression ']' { sprintf( arrayexpr, "%s[%s]", temppri, primexp) ; }
+ArrayExpression: PrimaryExpression '[' PrimaryExpression ']' { sprintf( buff, "%s[%s]", $1, $3) ; $$ = strdup(buff); }
 
-PrimaryExpression: INTVAL           {sprintf(primexp, "%d", $1); }
-                 | BOOLVAL          {strcpy(primexp, $1);} 
-                 | IDENTIFIER       {strcpy(primexp, $1);} 
-                 | THIS             {strcpy(primexp, "this\0"); }
-                 | NEW INT '[' Expression ']' { sprintf(primexp, "new int [ %s ]", expr);}
-                 | NEW IDENTIFIER '(' ')'     { sprintf(primexp, "new %s()",$2);}
-                 | '!' Expression             { sprintf(primexp, "! %s ", expr);}
-                 | '(' Expression ')'         { sprintf(primexp, "( %s )", expr);}
+PrimaryExpression: INTVAL           {sprintf(buff, "%d", $1); $$ = strdup(buff); }
+                 | BOOLVAL          {strcpy(buff, $1); $$ = strdup(buff);} 
+                 | IDENTIFIER       {strcpy(buff, $1); $$ = strdup(buff);} 
+                 | THIS             {strcpy(buff, "this\0");  $$ = strdup(buff);}
+                 | NEW INT '[' Expression ']' { sprintf(buff, "new int [ %s ]", $4); $$ = strdup(buff);}
+                 | NEW IDENTIFIER '(' ')'     { sprintf(buff, "new %s()",$2); $$ = strdup(buff);}
+                 | '!' Expression             { sprintf(buff, "! %s ", $2); $$ = strdup(buff);}
+                 | '(' Expression ')'         { sprintf(buff, "( %s )", $2); $$ = strdup(buff);}
                  ;
 
 MacroDefinition: MacroDefStatement

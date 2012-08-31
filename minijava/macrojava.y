@@ -158,7 +158,7 @@ MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']'
 
 StatementList: /*empty*/ { strcpy( buff, " " ); $$ = strdup(buff); }
              | Statement { strcpy(buff, $1); $$ = strdup(buff); }
-             | MidStatement Statement { strcpy(buff, $1 ); strcat(buff, $2);}
+             | MidStatement Statement { strcpy(buff, $1 ); strcat(buff, $2); $$ = strdup(buff); }
              ;
 
 MidStatement: Statement { strcpy(buff, $1); $$ = strdup(buff); }
@@ -200,11 +200,15 @@ Statement: '{' StatementList '}'
          {
              sprintf( buff, "if ( %s ) %s", $3, $5 );  
              $$ = strdup(buff);
+            printf("\nxxxx%dxxxxx\n", yylineno);
+            printf("\n%s\n", $3);
          }
          | IF '(' Expression ')' Statement ELSE Statement 
          {
              sprintf( buff, "if ( %s ) %s else %s", $3, $5, $7 );
              $$ = strdup(buff);
+             printf("\nxxxxx%dxxxxx\n", yylineno);
+            printf("\n%s\n", $3);
          }
          | WHILE '(' Expression ')' Statement 
          { 

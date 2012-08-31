@@ -5,12 +5,18 @@
 extern FILE* yyin;
 
 void yyerror(const char *s);
+char* replace(char* sentence, char* word, char* altword);
 extern int yyparse();
 extern int yylineno;
 int yydebug = 1;
 
 char* temp;
 char* buff;
+
+int i;
+int currident;
+char* macros[100];
+char* macroname[100];
 %}
 
 
@@ -19,7 +25,8 @@ char* buff;
        buff[0] = '\0';
        temp = malloc( 100000 );
        temp[0] = '\0';
-
+       i = 0;
+       currident = 0;
 };
 
 
@@ -317,13 +324,26 @@ MacroDefinition: MacroDefStatement
                | MacroDefExpression
                ;
 
-MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' StatementList '}'
+MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' MacStatementList '}'
+                 {
+                    macroname[i] = strdup($3);
+                    mactext[i] = strdup($3);
+                    i++;
+                 }
                  ;
 MacroDefExpression: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '(' Expression ')'
+                  {
+                    macroname[i] = strdup($3);
+                    mactext[i] = strdup($3);
+                    i++;
+                  }
                   ;
 
 IdentifierList: /*empty*/
               | IDENTIFIER
+              {
+                sprintf(buff, "$MacroParam%d",currident);
+              }
               | MidIdentifier ',' IDENTIFIER
               ;
 
@@ -346,4 +366,26 @@ void yyerror(const char *s){
         scanf("%d",&g);
         }
     exit(1);
+}
+
+
+char* replace(char* sentence, char* word, char* altword) {
+    char* dest = malloc(2 * strlen(sentence));
+    dest[0] = '\0';
+    char* currpos;
+    char* prevpos;
+    int wordlen = strlen(word);
+    int sentlen = strlen(sentence);
+    currpos = strstr(sentence, word);
+    prevpos = sentence;
+    while(currpos){
+        strncat(dest, prevpos, currpos - prevpos );
+        strcat(dest, altword);
+        currpos += wordlen;
+        if(currpos >= sentence + sentlen) return dest;
+        prevpos = currpos;
+        currpos = strstr(currpos, word);
+    }
+    strcat(dest, prevpos);
+    return dest;
 }

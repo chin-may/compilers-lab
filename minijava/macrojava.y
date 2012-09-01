@@ -13,10 +13,17 @@ int yydebug = 1;
 char* temp;
 char* buff;
 
-int i;
+int currMac;
 int currident;
 char* macros[100];
 char* macroname[100];
+int macroNum;
+int currExpMac;
+int currExpParam;
+char* expParams[100];
+
+char* macIdents[50][10];
+int* macIdentNum;
 %}
 
 
@@ -25,8 +32,10 @@ char* macroname[100];
        buff[0] = '\0';
        temp = malloc( 100000 );
        temp[0] = '\0';
-       i = 0;
+       currMac = 0;
        currident = 0;
+       macIdentNum = calloc(100,1);
+       macroNum = 0;
 };
 
 
@@ -59,7 +68,6 @@ char* macroname[100];
 %token <kw> EXTENDS
 %token <kw> STRING
 
-%type <id> MacroDefinitionList
 %type <id> MainClass
 %type <id> TypeDeclarationList
 %type <id> Statement
@@ -83,15 +91,28 @@ char* macroname[100];
 %type <id> MidExpression
 
 
+%type <id> MacParamList
+%type <id> MidMacExpression
+%type <id> MacStatementList
+%type <id> MacMidStatement
+%type <id> MacStatement
+%type <id> MacMidExpression
+%type <id> MacExpression
+%type <id> MacArrayExpression
+%type <id> MacPrimaryExpression
+%type <id> MacExpressionList
 
 %% 
 // Grammar section.  Add your rules here.
 // Example rule to parse empty classes. 
 //macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "macros go here\n", $2, $3 ); }
+Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "\n", $2, $3 ); }
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
+                   {
+                     macroNum++;
+                   }
                    ;
 
 
@@ -207,30 +228,86 @@ Statement: '{' StatementList '}'
          {
              sprintf( buff, "if ( %s ) %s", $3, $5 );  
              $$ = strdup(buff);
-            printf("\nxxxx%dxxxxx\n", yylineno);
-            printf("\n%s\n", $3);
          }
          | IF '(' Expression ')' Statement ELSE Statement 
          {
              sprintf( buff, "if ( %s ) %s else %s", $3, $5, $7 );
              $$ = strdup(buff);
-             printf("\nxxxxx%dxxxxx\n", yylineno);
-            printf("\n%s\n", $3);
          }
          | WHILE '(' Expression ')' Statement 
          { 
              sprintf( buff, "while ( %s ) %s", $3, $5  );
              $$ = strdup(buff); 
          }
-         | IDENTIFIER '(' ExpressionList ')' ';' //Macro call
+         | IDENTIFIER  CodeNonTerm '(' MacParamList ')' ';' //Macro call
+         {  
+            int i;
+            char* expandedMac;
+            char* prevexp;
+            expandedMac = strdup(macros[currExpMac]);
+            printf("%d\n", currExpParam);
+            for(i = 0; i < currExpParam; i++){
+                sprintf(temp, "$MacIdent$%d", i);
+                printf("%s %s %s\n", expandedMac, temp, expParams[i]);
+                prevexp = expandedMac;
+                expandedMac = replace(expandedMac, temp, expParams[i]);
+                free(prevexp);
+            }
+            $$ = strdup(expandedMac);
+             
+         }
 
          | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' 
          {
+             if((strcmp($1, "System.out") != 0) || (strcmp($3, "println") != 0))
+                yyerror("println wrong");
+             else{
              sprintf( buff, "%s.%s( %s );\n", $1, $3, $5 );
              $$ = strdup(buff);
+             }
          }
          ;
 
+CodeNonTerm: /*empty*/
+            {
+                currExpMac = macroFind($<id>0); 
+                if(currExpMac < 0) yyerror("Macro doesnt exist");
+                currExpParam = 0;
+            }
+
+MacParamList: /*empty*/ { $$ = strdup(" ");}
+              | Expression 
+              {
+                  $$ = strdup($1); 
+                  expParams[currExpParam] = strdup($1);
+                  currExpParam++;
+              }
+              | MidMacExpression ',' Expression 
+              {
+                  strcpy(buff, $1); 
+                  strcat(buff, ", ");  
+                  strcat(buff, $3); 
+                  $$ = strdup(buff);
+                  expParams[currExpParam] = strdup($3);
+                  currExpParam++;
+              } 
+              ;
+
+
+MidMacExpression: Expression
+              {
+                  $$ = strdup($1); 
+                  expParams[currExpParam] = strdup($1);
+                  currExpParam++;
+              }
+             | MidMacExpression ',' Expression 
+             {
+                 sprintf( buff, "%s , %s", $1, $3);
+                 $$ = strdup(buff);
+                 expParams[currExpParam] = strdup($3);
+                 currExpParam++;
+             }
+             ;
 ExpressionList: /*empty*/ { $$ = strdup(" ");}
               | Expression { $$ = strdup($1); }
               | MidExpression ',' Expression 
@@ -291,11 +368,25 @@ Expression: PrimaryExpression '&'   PrimaryExpression
               $$ = strdup(buff);
           }
           | ArrayExpression             { $$ = strdup($1); }
-          | IDENTIFIER '(' ExpressionList ')'/* Macro expr call */
-          {
-              sprintf(buff, "%s ( %s )", $1, $3);
-              $$ = strdup(buff); 
-          }
+          | IDENTIFIER  CodeNonTerm '(' MacParamList ')'/* Macro expr call */
+
+         {  
+            int i;
+            char* expandedMac;
+            char* prevexp;
+            expandedMac = strdup(macros[currExpMac]);
+            
+            printf("%d\n", currExpParam);
+            for(i = 0; i < currExpParam; i++){
+                sprintf(temp, "$MacIdent$%d", i);
+                prevexp = expandedMac;
+                printf("%s %s %s\n", expandedMac, temp, expParams[i]);
+                expandedMac = replace(expandedMac, temp, expParams[currExpParam]);
+                free(prevexp);
+            }
+            $$ = strdup(expandedMac);
+             
+         }
           | Expression '+' PrimaryExpression 
           {
               sprintf( buff, "%s + %s", $1, $3);
@@ -326,30 +417,239 @@ MacroDefinition: MacroDefStatement
 
 MacroDefStatement: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '{' MacStatementList '}'
                  {
-                    macroname[i] = strdup($3);
-                    mactext[i] = strdup($3);
-                    i++;
+                    macroname[currMac] = strdup($3);
+                    macros[currMac] = strdup($8);
+                    currMac++;
                  }
                  ;
 MacroDefExpression: '#' DEFINE IDENTIFIER '(' IdentifierList ')' '(' Expression ')'
                   {
-                    macroname[i] = strdup($3);
-                    mactext[i] = strdup($3);
-                    i++;
+                    macroname[currMac] = strdup($3);
+                    macros[currMac] = strdup($8);
+                    currMac++;
                   }
                   ;
 
 IdentifierList: /*empty*/
+              {
+                macIdentNum[currMac] = 0;
+              }
               | IDENTIFIER
               {
-                sprintf(buff, "$MacroParam%d",currident);
+                macIdents[currMac][currident] = strdup($1);
+                currident++;
+                macIdentNum[currMac]++;
               }
               | MidIdentifier ',' IDENTIFIER
+              {
+                macIdents[currMac][currident] = strdup($3);
+                currident++;
+                macIdentNum[currMac]++;
+              }
               ;
 
 MidIdentifier: IDENTIFIER
+              {
+                macIdents[currMac][currident] = strdup($1);
+                currident++;
+                macIdentNum[currMac]++;
+              }
              | MidIdentifier ',' IDENTIFIER
+              {
+                macIdents[currMac][currident] = strdup($3);
+                currident++;
+                macIdentNum[currMac]++;
+              }
              ;
+
+MacStatementList: /*empty*/ { strcpy( buff, " " ); $$ = strdup(buff); }
+             | MacStatement { strcpy(buff, $1); $$ = strdup(buff); }
+             | MacMidStatement MacStatement { strcpy(buff, $1 ); strcat(buff, $2); $$ = strdup(buff); }
+             ;
+
+MacMidStatement: MacStatement { strcpy(buff, $1); $$ = strdup(buff); }
+            | MacMidStatement MacStatement { sprintf(buff, "%s %s", $1, $2); $$ = strdup(buff);}
+            ;
+
+MacStatement: '{' MacStatementList '}'
+         {
+             sprintf( buff, "\n{\n %s \n}\n", $2 ); $$ = strdup(buff); 
+         }
+         | IDENTIFIER '=' MacExpression ';'    
+         {
+             int check;
+             check = replaceCheck($1);
+             if(check>=0){
+                 sprintf( buff, "$MacIdent$%d = %s ;\n", check, $3);
+                 $$ = strdup(buff);
+             }
+             else{
+                 sprintf( buff, "%s = %s ;\n", $1, $3);
+                 $$ = strdup(buff);
+             }
+         }
+         | MacArrayExpression '=' MacExpression ';'
+         { 
+             sprintf( buff, "%s = %s ;\n", $1, $3);  
+             $$ = strdup(buff);
+         }
+         | IF '(' MacExpression ')' MacStatement
+         {
+             sprintf( buff, "if ( %s ) %s", $3, $5 );  
+             $$ = strdup(buff);
+         }
+         | IF '(' MacExpression ')' MacStatement ELSE MacStatement 
+         {
+             sprintf( buff, "if ( %s ) %s else %s", $3, $5, $7 );
+             $$ = strdup(buff);
+         }
+         | WHILE '(' MacExpression ')' MacStatement 
+         { 
+             sprintf( buff, "while ( %s ) %s", $3, $5  );
+             $$ = strdup(buff); 
+         }
+         | IDENTIFIER '(' MacExpressionList ')' ';' //Macro call
+
+         | MacExpression '.' IDENTIFIER  '(' MacExpressionList ')' ';' 
+         {
+             if((strcmp($1, "System.out") != 0) || (strcmp($3, "println") != 0))
+                yyerror("println wrong");
+             else{
+             sprintf( buff, "%s.%s( %s );\n", $1, $3, $5 );
+             $$ = strdup(buff);
+             }
+         }
+         ;
+
+
+MacExpressionList: /*empty*/ { $$ = strdup(" ");}
+              | MacExpression { $$ = strdup($1); }
+              | MacMidExpression ',' MacExpression 
+              {
+                  strcpy(buff, $1); 
+                  strcat(buff, ", ");  
+                  strcat(buff, $3); 
+                  $$ = strdup(buff);
+              } 
+              ;
+
+MacMidExpression: MacExpression { $$ = strdup($1); }
+             | MacMidExpression ',' MacExpression 
+             {
+                 sprintf( buff, "%s , %s", $1, $3);
+                 $$ = strdup(buff);
+             }
+             ;
+
+MacExpression: MacPrimaryExpression '&'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s & %s", $1, $3);
+              $$ = strdup(buff); 
+          }
+          |	MacPrimaryExpression '<'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s < %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression '+'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s + %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression '-'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s - %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression '*'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s * %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression '/'   MacPrimaryExpression 
+          {
+              sprintf(buff, "%s / %s", $1, $3);  
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression '.' IDENTIFIER 
+          { 
+              sprintf(buff, "%s.%s", $1, $3); 
+              $$ = strdup(buff); 
+          }
+          | MacPrimaryExpression '.' IDENTIFIER '('  MacExpressionList ')' 
+          {
+              sprintf( buff, "%s.%s( %s)", $1, $3, $5);
+              $$ = strdup(buff);
+          }
+          | MacArrayExpression             { $$ = strdup($1); }
+          | IDENTIFIER '(' MacExpressionList ')'/* Macro expr call */
+          {
+              sprintf(buff, "%s ( %s )", $1, $3);
+              $$ = strdup(buff); 
+          }
+          | MacExpression '+' MacPrimaryExpression 
+          {
+              sprintf( buff, "%s + %s", $1, $3);
+              $$ = strdup(buff);
+          }
+          | MacPrimaryExpression 
+          {
+              strcpy( buff, $1);
+              $$ = strdup(buff);
+          }
+          ; 
+
+MacArrayExpression: MacPrimaryExpression '[' MacPrimaryExpression ']' { sprintf( buff, "%s[%s]", $1, $3) ; $$ = strdup(buff); }
+
+MacPrimaryExpression: INTVAL           
+                    {
+                        sprintf(buff, "%d", $1);
+                        $$ = strdup(buff);
+                    }
+                     | BOOLVAL          
+                     {
+                         strcpy(buff, $1);
+                         $$ = strdup(buff);
+                     } 
+                     | IDENTIFIER       
+                     {
+                         int check;
+                         check = replaceCheck($1);
+                         if(check>=0){
+                             sprintf( buff, "$MacIdent$%d", check);
+                             $$ = strdup(buff);
+                         }
+                         else{
+                             strcpy(buff, $1);
+                             $$ = strdup(buff);
+                         }
+                     } 
+                     | THIS             
+                     {
+                         strcpy(buff, "this\0");
+                         $$ = strdup(buff);
+                     }
+                     | NEW INT '[' MacExpression ']' 
+                     {
+                         sprintf(buff, "new int [ %s ]", $4);
+                         $$ = strdup(buff);
+                     }
+                     | NEW IDENTIFIER '(' ')'     
+                     {
+                         sprintf(buff, "new %s()",$2);
+                         $$ = strdup(buff);
+                     }
+                     | '!' MacExpression             
+                     {
+                         sprintf(buff, "! %s ", $2);
+                         $$ = strdup(buff);
+                     }
+                     | '(' MacExpression ')'         
+                     {
+                         sprintf(buff, "( %s )", $2);
+                         $$ = strdup(buff);
+                     }
+                     ;
 
 %%
 main(){
@@ -388,4 +688,22 @@ char* replace(char* sentence, char* word, char* altword) {
     }
     strcat(dest, prevpos);
     return dest;
+}
+
+int replaceCheck(char* ident){
+    int i;
+    for(i = 0; i < macIdentNum[currMac]; i++){
+        if(strcmp(ident, macIdents[currMac][i]) == 0 )
+            return i;
+    }
+    return -1;
+}
+
+int macroFind(char* ident){
+    int i;
+    for(i = 0; i < macroNum; i++){
+        if(strcmp(ident, macroname[i]) == 0 )
+            return i;
+    }
+    return -1;
 }

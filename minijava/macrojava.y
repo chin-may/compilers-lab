@@ -181,7 +181,7 @@ MainClass: CLASS IDENTIFIER '{' PUBLIC STATIC VOID IDENTIFIER '(' STRING '['']'
 {
     if( strcmp( $15, "System" ) || strcmp( $17, "out" ) || strcmp( $19, "println" ) ) 
         yyerror( "System.out.println not found" );
-    sprintf( buff, "class %s { public static void main ( String[] %s ) { System.out.println( %s ); } }", $2, $12, $21 ); 
+    sprintf( buff, "class %s { \npublic static void main ( String[] %s ) \n{ System.out.println( %s ); } \n}", $2, $12, $21 ); 
     $$ = strdup(buff); 
 } 
          ;
@@ -203,13 +203,13 @@ Type: INT '['']' { strcpy( buff, "int[]\0" ); $$ = strdup(buff); }
 
 MethodDeclaration: PUBLIC IDENTIFIER IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
         {
-            sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+            sprintf( buff, "\npublic %s %s ( %s ) \n{\n %s %s return %s;\n }\n", $2, $3, $5, $8, $9, $11 ); 
             $$ = strdup( buff );
         }
 
         | PUBLIC Type IDENTIFIER '(' ParamList ')' '{'  VarDeclarationList StatementList RETURN Expression ';' '}'
         { 
-            sprintf( buff, "public %s %s ( %s ) {\n %s %s return %s;\n }", $2, $3, $5, $8, $9, $11 ); 
+            sprintf( buff, "\npublic %s %s ( %s )\n {\n %s %s return %s;\n }\n", $2, $3, $5, $8, $9, $11 ); 
             $$ = strdup( buff );
         }
                  ;
@@ -261,12 +261,10 @@ Statement: '{' StatementList '}'
 
          | Expression '.' IDENTIFIER  '(' ExpressionList ')' ';' 
          {
-             if((strcmp($1, "System.out") != 0) || (strcmp($3, "println") != 0))
-                yyerror("println wrong");
-             else{
+             
              sprintf( buff, "%s.%s( %s );\n", $1, $3, $5 );
              $$ = strdup(buff);
-             }
+             
          }
          ;
 
@@ -529,12 +527,9 @@ MacStatement: '{' MacStatementList '}'
 
          | MacExpression '.' IDENTIFIER  '(' MacExpressionList ')' ';' 
          {
-             if((strcmp($1, "System.out") != 0) || (strcmp($3, "println") != 0))
-                yyerror("println wrong");
-             else{
              sprintf( buff, "%s.%s( %s );\n", $1, $3, $5 );
              $$ = strdup(buff);
-             }
+             
          }
          ;
 

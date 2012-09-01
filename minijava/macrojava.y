@@ -18,12 +18,13 @@ int currident;
 char* macros[100];
 char* macroname[100];
 int macroNum;
-int currExpMac;
-int currExpParam;
-char* expParams[100];
+int currExpMac[10];
+int currExpParam[10];
+char* expParams[10][100];
 
 char* macIdents[50][10];
 int* macIdentNum;
+int depth;
 %}
 
 
@@ -36,6 +37,7 @@ int* macIdentNum;
        currident = 0;
        macIdentNum = calloc(100,1);
        macroNum = 0;
+       depth = -1;
 };
 
 
@@ -244,16 +246,17 @@ Statement: '{' StatementList '}'
             int i;
             char* expandedMac;
             char* prevexp;
-            expandedMac = strdup(macros[currExpMac]);
-            printf("%d\n", currExpParam);
-            for(i = 0; i < currExpParam; i++){
+            expandedMac = strdup(macros[currExpMac[depth]]);
+            printf("number of param:%d\n", currExpParam[depth]);
+            for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
-                printf("%s %s %s\n", expandedMac, temp, expParams[i]);
+                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
                 prevexp = expandedMac;
-                expandedMac = replace(expandedMac, temp, expParams[i]);
+                expandedMac = replace(expandedMac, temp, expParams[depth][i]);
                 free(prevexp);
             }
             $$ = strdup(expandedMac);
+            depth--;
              
          }
 
@@ -270,17 +273,18 @@ Statement: '{' StatementList '}'
 
 CodeNonTerm: /*empty*/
             {
-                currExpMac = macroFind($<id>0); 
-                if(currExpMac < 0) yyerror("Macro doesnt exist");
-                currExpParam = 0;
+                depth++;
+                currExpMac[depth] = macroFind($<id>0); 
+                if(currExpMac[depth] < 0) yyerror("Macro doesnt exist");
+                currExpParam[depth] = 0;
             }
 
 MacParamList: /*empty*/ { $$ = strdup(" ");}
               | Expression 
               {
                   $$ = strdup($1); 
-                  expParams[currExpParam] = strdup($1);
-                  currExpParam++;
+                  expParams[depth][currExpParam[depth]] = strdup($1);
+                  currExpParam[depth]++;
               }
               | MidMacExpression ',' Expression 
               {
@@ -288,8 +292,8 @@ MacParamList: /*empty*/ { $$ = strdup(" ");}
                   strcat(buff, ", ");  
                   strcat(buff, $3); 
                   $$ = strdup(buff);
-                  expParams[currExpParam] = strdup($3);
-                  currExpParam++;
+                  expParams[depth][currExpParam[depth]] = strdup($3);
+                  currExpParam[depth]++;
               } 
               ;
 
@@ -297,15 +301,15 @@ MacParamList: /*empty*/ { $$ = strdup(" ");}
 MidMacExpression: Expression
               {
                   $$ = strdup($1); 
-                  expParams[currExpParam] = strdup($1);
-                  currExpParam++;
+                  expParams[depth][currExpParam[depth]] = strdup($1);
+                  currExpParam[depth]++;
               }
              | MidMacExpression ',' Expression 
              {
                  sprintf( buff, "%s , %s", $1, $3);
                  $$ = strdup(buff);
-                 expParams[currExpParam] = strdup($3);
-                 currExpParam++;
+                 expParams[depth][currExpParam[depth]] = strdup($3);
+                 currExpParam[depth]++;
              }
              ;
 ExpressionList: /*empty*/ { $$ = strdup(" ");}
@@ -374,17 +378,18 @@ Expression: PrimaryExpression '&'   PrimaryExpression
             int i;
             char* expandedMac;
             char* prevexp;
-            expandedMac = strdup(macros[currExpMac]);
+            expandedMac = strdup(macros[currExpMac[depth]]);
             
-            printf("%d\n", currExpParam);
-            for(i = 0; i < currExpParam; i++){
+            printf("number of params:%d\n", currExpParam[depth]);
+            for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
                 prevexp = expandedMac;
-                printf("%s %s %s\n", expandedMac, temp, expParams[i]);
-                expandedMac = replace(expandedMac, temp, expParams[currExpParam]);
+                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
+                expandedMac = replace(expandedMac, temp, expParams[depth][currExpParam[depth]]);
                 free(prevexp);
             }
             $$ = strdup(expandedMac);
+            depth--;
              
          }
           | Expression '+' PrimaryExpression 
@@ -509,6 +514,23 @@ MacStatement: '{' MacStatementList '}'
              $$ = strdup(buff); 
          }
          | IDENTIFIER '(' MacExpressionList ')' ';' //Macro call
+         {  
+            int i;
+            char* expandedMac;
+            char* prevexp;
+            expandedMac = strdup(macros[currExpMac[depth]]);
+            printf("%d\n", currExpParam[depth]);
+            for(i = 0; i < currExpParam[depth]; i++){
+                sprintf(temp, "$MacIdent$%d", i);
+                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
+                prevexp = expandedMac;
+                expandedMac = replace(expandedMac, temp, expParams[depth][i]);
+                free(prevexp);
+            }
+            $$ = strdup(expandedMac);
+            depth--;
+             
+         }
 
          | MacExpression '.' IDENTIFIER  '(' MacExpressionList ')' ';' 
          {
@@ -583,10 +605,26 @@ MacExpression: MacPrimaryExpression '&'   MacPrimaryExpression
           }
           | MacArrayExpression             { $$ = strdup($1); }
           | IDENTIFIER '(' MacExpressionList ')'/* Macro expr call */
-          {
-              sprintf(buff, "%s ( %s )", $1, $3);
-              $$ = strdup(buff); 
-          }
+
+           {  
+            int i;
+            char* expandedMac;
+            char* prevexp;
+            expandedMac = strdup(macros[currExpMac[depth]]);
+            
+            printf("number of params:%d\n", currExpParam[depth]);
+            for(i = 0; i < currExpParam[depth]; i++){
+                sprintf(temp, "$MacIdent$%d", i);
+                prevexp = expandedMac;
+                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
+                expandedMac = replace(expandedMac, temp, expParams[depth][currExpParam[depth]]);
+                free(prevexp);
+            }
+            $$ = strdup(expandedMac);
+            depth--;
+            }
+             
+    
           | MacExpression '+' MacPrimaryExpression 
           {
               sprintf( buff, "%s + %s", $1, $3);

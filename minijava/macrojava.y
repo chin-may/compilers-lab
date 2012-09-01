@@ -105,10 +105,11 @@ int depth;
 %type <id> MacExpressionList
 
 %% 
-// Grammar section.  Add your rules here.
-// Example rule to parse empty classes. 
-//macrojava: CLASS IDENTIFIER '{' '}' { printf ("Parsed the empty class successfully!");}
-Goal: MacroDefinitionList MainClass TypeDeclarationList { printf( "%s %s %s", "\n", $2, $3 ); }
+Goal: MacroDefinitionList MainClass TypeDeclarationList 
+    {
+        printf("// Macrojava code parsed and minijava code generated successfully.\n");
+        printf( "%s\n %s", $2, $3 ); 
+    }
 
 MacroDefinitionList: /*empty*/
                    | MacroDefinitionList MacroDefinition
@@ -247,10 +248,8 @@ Statement: '{' StatementList '}'
             char* expandedMac;
             char* prevexp;
             expandedMac = strdup(macros[currExpMac[depth]]);
-            printf("number of param:%d\n", currExpParam[depth]);
             for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
-                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
                 prevexp = expandedMac;
                 expandedMac = replace(expandedMac, temp, expParams[depth][i]);
                 free(prevexp);
@@ -380,11 +379,9 @@ Expression: PrimaryExpression '&'   PrimaryExpression
             char* prevexp;
             expandedMac = strdup(macros[currExpMac[depth]]);
             
-            printf("number of params:%d\n", currExpParam[depth]);
             for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
                 prevexp = expandedMac;
-                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
                 expandedMac = replace(expandedMac, temp, expParams[depth][currExpParam[depth]]);
                 free(prevexp);
             }
@@ -519,10 +516,8 @@ MacStatement: '{' MacStatementList '}'
             char* expandedMac;
             char* prevexp;
             expandedMac = strdup(macros[currExpMac[depth]]);
-            printf("%d\n", currExpParam[depth]);
             for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
-                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
                 prevexp = expandedMac;
                 expandedMac = replace(expandedMac, temp, expParams[depth][i]);
                 free(prevexp);
@@ -612,11 +607,9 @@ MacExpression: MacPrimaryExpression '&'   MacPrimaryExpression
             char* prevexp;
             expandedMac = strdup(macros[currExpMac[depth]]);
             
-            printf("number of params:%d\n", currExpParam[depth]);
             for(i = 0; i < currExpParam[depth]; i++){
                 sprintf(temp, "$MacIdent$%d", i);
                 prevexp = expandedMac;
-                printf("%s %s %s\n", expandedMac, temp, expParams[depth][i]);
                 expandedMac = replace(expandedMac, temp, expParams[depth][currExpParam[depth]]);
                 free(prevexp);
             }
@@ -698,11 +691,8 @@ main(){
 }
 
 void yyerror(const char *s){
-	printf ("Parse error: %s\t%d\n" , s, yylineno)	;
-    int g;
-    while(!feof(yyin)){
-        scanf("%d",&g);
-        }
+	//printf ("Parse error: %s\t%d\n" , s, yylineno)	;
+    printf("// Failed to parse macrojava code.\n");
     exit(1);
 }
 

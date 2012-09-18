@@ -14,6 +14,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
+	TableData current;
+	ProgData top;
+	ClassData curcl;
+	int position;
+	String[] typearr = {"intarray", "boolean","int", "ident"};
+	
+	
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -67,11 +74,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> <EOF>
     */
    public R visit(Goal n) {
-      R _ret=null;
+	  ProgData prog = new ProgData();
+	  current = prog;
+	  top = prog;
+	  prog.mainclass = n.f0.f1.f0.tokenImage;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      return (R) prog;
    }
 
    /**
@@ -95,6 +105,18 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(MainClass n) {
       R _ret=null;
+      ClassData mn = new ClassData();
+      mn.name = n.f1.f0.tokenImage;
+      mn.parent = top;
+      curcl = mn;
+      top.classes.put(mn.name, mn);
+      FuncData main = new FuncData();
+      main.ret = "void";
+      mn.meth.put("main", main);
+      main.parent = mn;
+      current = main;
+      position = 0;
+      curcl = mn;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -112,7 +134,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f14.accept(this);
       n.f15.accept(this);
       n.f16.accept(this);
-      return _ret;
+      return (R) mn;
    }
 
    /**
@@ -135,6 +157,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(ClassDeclaration n) {
       R _ret=null;
+      ClassData cd = new ClassData();
+      cd.name = n.f1.f0.tokenImage;
+      cd.parent = top;
+      current = cd;
+      top.classes.put(cd.name, cd);
+      position = 0;
+      curcl = cd;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -156,6 +185,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(ClassExtendsDeclaration n) {
       R _ret=null;
+      ClassData cd = new ClassData();
+      cd.name = n.f1.f0.tokenImage;
+      cd.parent = top.lookup(n.f1.f0.tokenImage);
+      current = cd;
+      top.classes.put(cd.name, cd);
+      position = 0;
+      curcl = cd;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -173,11 +209,20 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> ";"
     */
    public R visit(VarDeclaration n) {
+	  VarData v= new VarData();
+	  v.prev = current;
+	  v.type = typearr[n.f0.f0.which];
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      if (current instanceof ClassData){
+    	  ((ClassData)current).attr.put(n.f1.f0.tokenImage, v);
+      }
+      else if (current instanceof FuncData) {
+    	  ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
+	 }
+      return (R) v;
    }
 
    /**
@@ -196,7 +241,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f12 -> "}"
     */
    public R visit(MethodDeclaration n) {
-      R _ret=null;
+	  FuncData fun = new FuncData();
+	  fun.parent = curcl;
+	  curcl.meth.put(n.f2.f0.tokenImage, fun);
+	  current = fun;
+	  position =0;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -210,7 +259,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f10.accept(this);
       n.f11.accept(this);
       n.f12.accept(this);
-      return _ret;
+      fun.ret = typearr[n.f1.f0.which];
+      return (R) fun;
    }
 
    /**
@@ -230,9 +280,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(FormalParameter n) {
       R _ret=null;
+      VarData v = new VarData();
+      v.prev = current;
+      v.type = typearr[n.f0.f0.which];
+      ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
+      ((FuncData)current).paramlist.add(v);
       n.f0.accept(this);
       n.f1.accept(this);
-      return _ret;
+      return (R) v;
    }
 
    /**

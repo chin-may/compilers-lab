@@ -10,16 +10,13 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
-public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
+public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-	TableData current;
-	public static ProgData top;
-	ClassData curcl;
-	int position;
 	String[] typearr = {"intarray", "boolean","int", "ident"};
-	
+	ArrayList<String> curtypelist = new ArrayList<String>();
+	Stack<ArrayList<String>> paramst = new Stack<>();
 	
    public R visit(NodeList n) {
       R _ret=null;
@@ -36,7 +33,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
          R _ret=null;
          int _count=0;
          for ( Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) {
-            e.nextElement().accept(this);
+            Node tmp = e.nextElement();
+            tmp.accept(this);
             _count++;
          }
          return _ret;
@@ -74,14 +72,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> <EOF>
     */
    public R visit(Goal n) {
-	  ProgData prog = new ProgData();
-	  current = prog;
-	  top = prog;
-	  prog.mainclass = n.f0.f1.f0.tokenImage;
+	  
+	  current = top;
+	  
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return (R) prog;
+      return null;
    }
 
    /**
@@ -104,19 +101,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f16 -> "}"
     */
    public R visit(MainClass n) {
-      R _ret=null;
-      ClassData mn = new ClassData();
-      mn.name = n.f1.f0.tokenImage;
-      mn.parent = top;
+      
+      ClassData mn = top.classes.get(n.f1.f0.tokenImage);
       curcl = mn;
-      top.classes.put(mn.name, mn);
-      FuncData main = new FuncData();
-      main.ret = "void";
-      mn.meth.put("main", main);
-      main.parent = mn;
-      current = main;
-      position = 0;
-      curcl = mn;
+      current = mn;
+      
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -156,20 +145,15 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f5 -> "}"
     */
    public R visit(ClassDeclaration n) {
-      ClassData cd = new ClassData();
-      cd.name = n.f1.f0.tokenImage;
-      cd.parent = top;
-      current = cd;
-      top.classes.put(cd.name, cd);
-      position = 0;
-      curcl = cd;
+      current = top.classes.get(n.f1.f0.tokenImage);
+      curcl = (ClassData) current;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      return (R)cd;
+      return null;
    }
 
    /**
@@ -208,25 +192,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> ";"
     */
    public R visit(VarDeclaration n) {
-	  VarData v= new VarData();
-	  v.prev = current;
-      R _ret=null;
-	  if(n.f0.f0.which != 3){
-		  v.type = typearr[n.f0.f0.which];
-	      n.f0.accept(this);
-	  }
-	  else{
-		  v.type = (String) n.f0.accept(this);
-	  }
+      n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      if (current instanceof ClassData){
-    	  ((ClassData)current).attr.put(n.f1.f0.tokenImage, v);
-      }
-      else if (current instanceof FuncData) {
-    	  ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
-	 }
-      return (R) v;
+      return null;
    }
 
    /**
@@ -245,21 +214,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f12 -> "}"
     */
    public R visit(MethodDeclaration n) {
-	  FuncData fun = new FuncData();
-	  fun.parent = curcl;
-	  curcl.meth.put(n.f2.f0.tokenImage, fun);
-	  current = fun;
-	  position =0;
+	  current = curcl.flookup(n.f2.f0.tokenImage);
+	  
       n.f0.accept(this);
-      
-	  if(n.f1.f0.which != 3){
-		  fun.ret = typearr[n.f1.f0.which];
-	      n.f1.accept(this);
-	  }
-	  else{
-		  fun.ret = (String) n.f1.accept(this);
-	  }
-      
+      n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
@@ -271,7 +229,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f10.accept(this);
       n.f11.accept(this);
       n.f12.accept(this);
-      return (R) fun;
+      return null;
    }
 
    /**
@@ -290,21 +248,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f1 -> Identifier()
     */
    public R visit(FormalParameter n) {
-      R _ret=null;
-      VarData v = new VarData();
-      v.prev = current;
-	  if(n.f0.f0.which != 3){
-		  v.type = typearr[n.f0.f0.which];
-	      n.f1.accept(this);
-	  }
-	  else{
-		  v.type = (String) n.f0.accept(this);
-	  }
-      ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
-      ((FuncData)current).paramlist.add(v.type);
       n.f0.accept(this);
       n.f1.accept(this);
-      return (R) v;
+      return null;
    }
 
    /**
@@ -325,8 +271,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     *       | Identifier()
     */
    public R visit(Type n) {
-      String objecttype =(String) n.f0.accept(this);
-      return (R)objecttype;
+      R _ret=null;
+      n.f0.accept(this);
+      return _ret;
    }
 
    /**
@@ -394,12 +341,21 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f3 -> ";"
     */
    public R visit(AssignmentStatement n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String temp = (String)n.f0.accept(this);
+      String lexp;
+      if(((FuncData)current).vars.containsKey(temp)){
+	       lexp = ((FuncData)current).vars.get(temp).type;
+      }
+      else{
+    	   lexp = ((VarData)curcl.lookup(temp)).type;
+      }
       n.f1.accept(this);
-      n.f2.accept(this);
+      String rexp = (String)n.f2.accept(this);
+      if(!lexp.equals(rexp)){
+    	  System.out.print("Assignment error");
+      }
       n.f3.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -413,12 +369,26 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(ArrayAssignmentStatement n) {
       R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
+      VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!v.type.equals("int[]")){
+    	  System.out.print("Non array indexed");
+    	  System.exit(1);
+      }
+      
       n.f1.accept(this);
+      n.f2.accept(this);
+      if(!n.f2.accept(this).equals("int")){
+    	  System.out.print("Non integer index used");
+    	  System.exit(1);
+      }
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
-      n.f5.accept(this);
+      if(!n.f5.accept(this).equals("int")){
+    	  System.out.print("Non integer array assignment");
+    	  System.exit(1);
+      }
       n.f6.accept(this);
       return _ret;
    }
@@ -433,15 +403,16 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f6 -> Statement()
     */
    public R visit(IfStatement n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      if( !n.f2.accept(this).equals("boolean")){
+    	  System.out.print("non boolean if");
+      }
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
       n.f6.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -455,7 +426,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      if( !n.f2.accept(this).equals("boolean")){
+    	  System.out.print("non boolean while");
+      }
       n.f3.accept(this);
       n.f4.accept(this);
       return _ret;
@@ -472,7 +445,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      String ptemp =  (String)n.f2.accept(this);
+      if(!ptemp.equals("int")){
+    	  System.out.print("print statement error");
+      }
       n.f3.accept(this);
       n.f4.accept(this);
       return _ret;
@@ -490,9 +466,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     *       | PrimaryExpression()
     */
    public R visit(Expression n) {
-      R _ret=null;
-      n.f0.accept(this);
-      return _ret;
+      return n.f0.accept(this);
    }
 
    /**
@@ -501,11 +475,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(AndExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String) n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+      if(! (lexp.equals("boolean")&& (rexp.equals("boolean")))){
+    	  System.out.print("AndExpression Error");
+    	  System.exit(1);
+      }
+      return (R) "boolean";
    }
 
    /**
@@ -514,11 +491,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(CompareExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("CompareExpression Error");
+    	  System.exit(1);
+      }
+      return (R) "boolean";
    }
 
    /**
@@ -527,11 +507,15 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(PlusExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("PlusExpression Error");
+    	  System.exit(1);
+      }
+      return (R) "int";
+      
    }
 
    /**
@@ -540,11 +524,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(MinusExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("MinusExpression Error");
+    	  System.exit(1);
+      }
+      return (R) "int";
    }
 
    /**
@@ -553,11 +540,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(TimesExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("TimesExpression Error");
+    	  System.exit(1);
+      }
+      return (R) "int";
    }
 
    /**
@@ -567,12 +557,20 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f3 -> "]"
     */
    public R visit(ArrayLookup n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
+      VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!v.type.equals("int[]")){
+    	  System.out.print("Non array indexed");
+    	  System.exit(1);
+      }
+      
       n.f1.accept(this);
-      n.f2.accept(this);
+      if(!n.f2.accept(this).equals("int")){
+    	  System.out.print("Non integer index used");
+    	  System.exit(1);
+      }
       n.f3.accept(this);
-      return _ret;
+      return (R) "int";
    }
 
    /**
@@ -581,11 +579,15 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> "length"
     */
    public R visit(ArrayLength n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!v.type.equals("int[]")){
+    	  System.out.print("Non array length called");
+    	  System.exit(1);
+      }
+      return (R) "int";
    }
 
    /**
@@ -597,14 +599,24 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f5 -> ")"
     */
    public R visit(MessageSend n) {
-      R _ret=null;
-      n.f0.accept(this);
+	   paramst.push(curtypelist);
+      curtypelist = new ArrayList<String>();
+      String instancetype = (String) n.f0.accept(this);
+	  ClassData cd = (ClassData)(top.classes.get(instancetype));
+      if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
+    	  System.out.print("Method not found");
+    	  System.exit(1);
+      }
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      return _ret;
+      FuncData fd = cd.flookup(n.f2.f0.tokenImage);
+      if(!fd.paramlist.equals(curtypelist))
+    	  System.out.print("Parameter error");
+      curtypelist = paramst.pop();
+      return (R)fd.ret;
    }
 
    /**
@@ -612,10 +624,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f1 -> ( ExpressionRest() )*
     */
    public R visit(ExpressionList n) {
-      R _ret=null;
-      n.f0.accept(this);
+	  curtypelist.add((String)n.f0.accept(this));
       n.f1.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -623,10 +634,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f1 -> Expression()
     */
    public R visit(ExpressionRest n) {
-      R _ret=null;
+	  curtypelist.add((String)n.f1.accept(this));
       n.f0.accept(this);
       n.f1.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -642,8 +653,30 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(PrimaryExpression n) {
       R _ret=null;
-      n.f0.accept(this);
-      return _ret;
+      R temp = n.f0.accept(this);
+      String[] primExpAr = {"int", "boolean","boolean", "id","this", "arrayalloc","not","brac"};
+      switch(n.f0.which){
+      case 0:
+    	  return (R) "int";
+      case 1:
+    	  return (R) "boolean";
+      case 2:
+    	  return (R) "boolean";
+      case 3:
+    	  return (R) ((VarData)current.lookup((String)temp)).type;
+      case 4:
+    	  return (R) (curcl.name);
+      case 5:
+    	  return (R)"int[]";
+      case 6:
+    	  return (R) temp;
+      case 7:
+    	  return (R) "boolean";
+      case 8:
+    	  return (R) temp;
+	  default:
+    	  return null;
+      }
    }
 
    /**
@@ -678,7 +711,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Identifier n) {
       n.f0.accept(this);
-      return (R)n.f0.tokenImage;
+      return (R) n.f0.tokenImage;
    }
 
    /**
@@ -714,12 +747,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f3 -> ")"
     */
    public R visit(AllocationExpression n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
-      return _ret;
+      if(!top.classes.containsKey(n.f1.f0.tokenImage)){
+    	  System.out.print("new object error");
+      }
+      return (R) n.f1.f0.tokenImage;
    }
 
    /**
@@ -739,11 +774,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> ")"
     */
    public R visit(BracketExpression n) {
-      R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      return (R)n.f1.accept(this);
    }
 
 }

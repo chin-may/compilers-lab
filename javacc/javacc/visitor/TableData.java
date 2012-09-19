@@ -3,31 +3,30 @@ package visitor;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
-interface Table {
 
-}
-
-interface TableData {
+public interface TableData {
 	public TableData lookup(String str);
+	public String getType(String var);
 
 }
 
-class GoalTable implements Table {
+class GoalData implements TableData {
 	String MainClass;
-	Hashtable<String, ClassTable> classes = new Hashtable<>();
+	Hashtable<String, ClassData> classes = new Hashtable<>();
 
-	public ClassTable lookup(String str) {
+	public ClassData lookup(String str) {
 		return classes.get(str);
 	}
 
+	@Override
+	public String getType(String var) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+
 }
 
-class ClassTable implements Table {
-	String name;
-	Hashtable<String, ClassAttr> attrs = new Hashtable<>();
-	Hashtable<String, FuncData> methods = new Hashtable<>();
-
-}
 
 class ClassAttr {
 
@@ -39,6 +38,12 @@ class VarData implements TableData {
 
 	@Override
 	public TableData lookup(String str) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getType(String var) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -56,20 +61,30 @@ class ClassData implements TableData {
 		if (var != null)
 			return var;
 		else {
-			FuncData fun = meth.get(str);
-			if (fun != null)
-				return fun;
-			else
 				return parent.lookup(str);
 		}
 
+	}
+	public FuncData flookup(String str) {
+		FuncData fun = meth.get(str);
+		if (fun != null)
+			return fun;
+		else {
+				return ((ClassData)parent).flookup(str);
+		}
+
+	}
+	@Override
+	public String getType(String var) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
 
 class FuncData implements TableData {
 	Hashtable<String, VarData> vars = new Hashtable<>();
-	ArrayList<VarData> paramlist = new ArrayList<>();
+	ArrayList<String> paramlist = new ArrayList<>();
 	String ret;
 	TableData parent;
 
@@ -83,6 +98,12 @@ class FuncData implements TableData {
 		}
 	}
 
+	@Override
+	public String getType(String var) {
+		
+		return null;
+	}
+
 }
 
 
@@ -93,6 +114,11 @@ class ProgData implements TableData{
 	@Override
 	public TableData lookup(String str) {
 		return classes.get(str);
+	}
+
+	@Override
+	public String getType(String var) {
+		return null;
 	}
 	
 }

@@ -14,7 +14,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-	String[] typearr = {"intarray", "boolean","int", "ident"};
+	String[] typearr = {"int[]", "boolean","int", "ident"};
 	ArrayList<String> curtypelist = new ArrayList<String>();
 	Stack<ArrayList<String>> paramst = new Stack<>();
 	
@@ -558,8 +558,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ArrayLookup n) {
       String lexp = (String)n.f0.accept(this);
-      VarData v = (VarData) ((FuncData)current).lookup(lexp);
-      if(!v.type.equals("int[]")){
+      //VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!lexp.equals("int[]")){
     	  System.out.print("Non array indexed");
     	  System.exit(1);
       }
@@ -582,8 +582,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      VarData v = (VarData) ((FuncData)current).lookup(lexp);
-      if(!v.type.equals("int[]")){
+      //VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!lexp.equals("int[]")){
     	  System.out.print("Non array length called");
     	  System.exit(1);
       }

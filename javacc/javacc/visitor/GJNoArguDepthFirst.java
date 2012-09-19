@@ -18,7 +18,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
 	public static ProgData top;
 	ClassData curcl;
 	int position;
-	String[] typearr = {"intarray", "boolean","int", "ident"};
+	String[] typearr = {"int[]", "boolean","int", "ident"};
 	
 	
    public R visit(NodeList n) {

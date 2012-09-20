@@ -181,6 +181,9 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       current = cd;
       top.classes.put(cd.name, cd);*/
       ClassData cd = top.classes.get(n.f1.f0.tokenImage);
+      if(top.isLooping(cd.name)){
+    	  System.out.println("Looping inheritance");
+      }
       current = cd;
       curcl = cd;
       n.f0.accept(this);

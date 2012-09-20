@@ -60,9 +60,10 @@ class ClassData implements TableData {
 		VarData var = attr.get(str);
 		if (var != null)
 			return var;
-		else {
+		else if(parent instanceof ClassData){
 				return parent.lookup(str);
 		}
+		else return null;
 
 	}
 	public FuncData flookup(String str) {
@@ -136,6 +137,17 @@ class ProgData implements TableData{
 					cc = (ClassData)cc.parent;
 				}
 				else return false;
+			}
+		}
+		return false;
+	}
+	
+	public boolean isLooping(String clname){
+		ClassData cd = classes.get(clname);
+		while(cd.parent!=null && cd.parent instanceof ClassData){
+			cd = (ClassData) cd.parent;
+			if(cd.name.equals(clname)){
+				return true;
 			}
 		}
 		return false;

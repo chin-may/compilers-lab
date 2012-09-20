@@ -226,9 +226,6 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
 		  System.out.print("Variable redeclared");
 		  System.exit(1);
 	  }
-	  if(top.classes.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("type used as identifier");
-	  }
 	  VarData v= new VarData();
 	  v.prev = current;
 	  if(n.f0.f0.which != 3){
@@ -276,9 +273,6 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
 	  position =0;
       n.f0.accept(this);
       
-	  if(top.classes.containsKey(n.f2.f0.tokenImage)){
-		  System.out.print("type used as identifier");
-	  }
 	  if(n.f1.f0.which != 3){
 		  fun.ret = typearr[n.f1.f0.which];
 	      n.f1.accept(this);

@@ -24,7 +24,7 @@ public class Main {
 
 			CheckVisitor cv = new CheckVisitor();
 			root.accept(cv); // Your assignment part is
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			System.out.println(e.toString());
 		}
 	}

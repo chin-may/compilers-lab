@@ -270,7 +270,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
 			  
 		  }
 	  }
-	  
+	 
+
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -281,7 +282,9 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f7.accept(this);
       n.f8.accept(this);
       n.f9.accept(this);
-      n.f10.accept(this);
+      if(!top.isParent(fd.ret, (String)n.f10.accept(this))){
+    	  System.out.print("Returned type not same as declared return type");
+      }
       n.f11.accept(this);
       n.f12.accept(this);
       current = curcl;

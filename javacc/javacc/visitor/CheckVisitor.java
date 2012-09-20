@@ -123,6 +123,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f14.accept(this);
       n.f15.accept(this);
       n.f16.accept(this);
+      current = top;
       return (R) mn;
    }
 
@@ -153,6 +154,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
+      current = top;
       return null;
    }
 
@@ -168,12 +170,18 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ClassExtendsDeclaration n) {
       R _ret=null;
-      ClassData cd = new ClassData();
+      //Dont know why I did this, horrible idea!
+     /* ClassData cd = new ClassData();
       cd.name = n.f1.f0.tokenImage;
       cd.parent = top.lookup(n.f1.f0.tokenImage);
+      if(cd.parent==null){
+    	  System.out.print("Non existant class extended");
+    	  System.exit(1);
+      }
       current = cd;
-      top.classes.put(cd.name, cd);
-      position = 0;
+      top.classes.put(cd.name, cd);*/
+      ClassData cd = top.classes.get(n.f1.f0.tokenImage);
+      current = cd;
       curcl = cd;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -183,6 +191,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f5.accept(this);
       n.f6.accept(this);
       n.f7.accept(this);
+      current = top;
       return _ret;
    }
 
@@ -195,6 +204,23 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
+      VarData v;
+	  if(current instanceof ClassData){
+		  v = ((ClassData) current).attr.get(n.f1.f0.tokenImage);
+		  if(curcl.parent!=null && curcl.parent instanceof ClassData){
+			  VarData tempva = (VarData)curcl.parent.lookup(n.f1.f0.tokenImage);
+			  if(tempva!=null && !top.isParent(tempva.type, v.type)){
+				  System.out.print("Override type error");
+			  }
+		  }
+	  }
+	  v = (VarData)current.lookup(n.f1.f0.tokenImage);
+	  if(!top.classes.containsKey(v.type)){
+		  if(!(v.type.equals("int") || v.type.equals("int[]") ||v.type.equals("boolean"))){
+			  System.out.print("Variable declared of nonexistant type");
+		  }
+			  
+	  }
       return null;
    }
 
@@ -214,7 +240,36 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
     * f12 -> "}"
     */
    public R visit(MethodDeclaration n) {
-	  current = curcl.flookup(n.f2.f0.tokenImage);
+	  FuncData fd;
+	  fd = ((ClassData) current).meth.get(n.f2.f0.tokenImage);
+	  if(curcl.parent!=null && curcl.parent instanceof ClassData){
+		  FuncData tempfd = ((ClassData)curcl.parent).flookup(n.f2.f0.tokenImage);
+		  if(tempfd!=null){
+			  if(!top.isParent(tempfd.ret,fd.ret)){
+				  System.out.print("Override type error");
+			  }
+			  for(int i=0;i<fd.paramlist.size();i++){
+				  if(!top.isParent(tempfd.paramlist.get(i), fd.paramlist.get(i))){
+					  System.out.print("Override type error");
+				  }
+			  }
+		  }
+	  }
+	  fd = curcl.flookup(n.f2.f0.tokenImage);
+	  current = fd;
+	  if(!top.classes.containsKey(fd.ret)){
+		  if(!(fd.ret.equals("int") || fd.ret.equals("int[]") ||fd.ret.equals("boolean"))){
+			  System.out.print("Return declared of nonexistant type");
+		  }
+	  }
+	  
+	  for(int i=0;i<fd.paramlist.size();i++){
+		  String tparam = fd.paramlist.get(i);
+		  if(!(top.classes.containsKey(tparam)||tparam.equals("int")||tparam.equals("int[]")||tparam.equals("boolean"))){
+			  System.out.print("Parameter declared of nonexistant type");
+			  
+		  }
+	  }
 	  
       n.f0.accept(this);
       n.f1.accept(this);
@@ -229,6 +284,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f10.accept(this);
       n.f11.accept(this);
       n.f12.accept(this);
+      current = curcl;
       return null;
    }
 

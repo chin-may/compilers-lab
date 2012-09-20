@@ -69,9 +69,10 @@ class ClassData implements TableData {
 		FuncData fun = meth.get(str);
 		if (fun != null)
 			return fun;
-		else {
+		else if(parent instanceof ClassData){
 				return ((ClassData)parent).flookup(str);
 		}
+		else return null;
 
 	}
 	@Override

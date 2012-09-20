@@ -20,6 +20,8 @@ public class Main {
 			root.accept(gjv); // Your assignment part is
 													// invoked here.
 
+			root.accept(new ParentSetter()); // Your assignment part is
+
 			CheckVisitor cv = new CheckVisitor();
 			root.accept(cv); // Your assignment part is
 		} catch (Exception e) {

@@ -16,7 +16,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
    //
 	String[] typearr = {"int[]", "boolean","int", "ident"};
 	ArrayList<String> curtypelist = new ArrayList<String>();
-	Stack<ArrayList<String>> paramst = new Stack<>();
+	Stack<ArrayList<String>> paramst = new Stack<ArrayList<String>>();
 	
    public R visit(NodeList n) {
       R _ret=null;

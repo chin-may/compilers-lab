@@ -4,7 +4,7 @@ import java.io.InputStream;
 import syntaxtree.*;
 import visitor.*;
 
-public class Main {
+public class TypeCheck {
 	TableData top;
 	public static void main(String[] args) {
 		try {
@@ -15,7 +15,6 @@ public class Main {
 			// Final submission file should take input from command line
 			//Node root = new MiniJavaParser(System.in).Goal();
 
-			System.out.println("Program parsed successfully");
 			GJNoArguDepthFirst gjv = new GJNoArguDepthFirst();
 			root.accept(gjv); // Your assignment part is
 													// invoked here.
@@ -25,7 +24,9 @@ public class Main {
 			CheckVisitor cv = new CheckVisitor();
 			root.accept(cv); // Your assignment part is
 		} catch (Throwable e) {
-			System.out.println(e.toString());
+			System.out.println("Type error");
+			System.exit(0);
 		}
+		System.out.print("Program type checked successfully");
 	}
 }

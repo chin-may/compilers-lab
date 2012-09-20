@@ -157,7 +157,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(ClassDeclaration n) {
 	  if(top.classes.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Class redeclared");
+          System.out.print( "Type error" );
+          System.exit(0);
 		  System.exit(1);
 	  }
       ClassData cd = new ClassData();
@@ -189,7 +190,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(ClassExtendsDeclaration n) {
 	  if(top.classes.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Class redeclared");
+          System.out.print( "Type error" );
+          System.exit(0);
 		  System.exit(1);
 	  }
       R _ret=null;
@@ -219,11 +221,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(VarDeclaration n) {
 	  if(current instanceof ClassData && ((ClassData)current).attr.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Variable redeclared");
+          System.out.print( "Type error" );
+          System.exit(0);
 		  System.exit(1);
 	  }
 	  else if(current instanceof FuncData && ((FuncData)current).vars.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Variable redeclared");
+          System.out.print( "Type error" );
+          System.exit(0);
 		  System.exit(1);
 	  }
 	  VarData v= new VarData();
@@ -263,7 +267,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(MethodDeclaration n) {
 	  if(((ClassData)current).meth.containsKey(n.f2.f0.tokenImage)){
-		  System.out.print("Method redeclared");
+          System.out.print( "Type error" );
+          System.exit(0);
 		  System.exit(1);
 	  }
 	  FuncData fun = new FuncData();

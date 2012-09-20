@@ -166,7 +166,8 @@ public class ParentSetter<R> extends GJNoArguDepthFirst<R> {
       n.f7.accept(this);
       
       if(!top.classes.containsKey(n.f3.f0.tokenImage)){
-    	  System.out.print("Non existant class extended");
+          System.out.print( "Type error" );
+          System.exit( 0 );
       }
       ClassData cd = top.classes.get(n.f1.f0.tokenImage);
       cd.parent = top.classes.get(n.f3.f0.tokenImage);

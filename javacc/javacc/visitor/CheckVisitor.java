@@ -182,7 +182,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       top.classes.put(cd.name, cd);*/
       ClassData cd = top.classes.get(n.f1.f0.tokenImage);
       if(top.isLooping(cd.name)){
-    	  System.out.println("Looping inheritance");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       current = cd;
       curcl = cd;
@@ -213,14 +214,16 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
 		  if(curcl.parent!=null && curcl.parent instanceof ClassData){
 			  VarData tempva = (VarData)curcl.parent.lookup(n.f1.f0.tokenImage);
 			  if(tempva!=null && !top.isParent(tempva.type, v.type)){
-				  System.out.print("Override type error");
+                  System.out.print( "Type error" );
+                  System.exit(0);
 			  }
 		  }
 	  }
 	  v = (VarData)current.lookup(n.f1.f0.tokenImage);
 	  if(!top.classes.containsKey(v.type)){
 		  if(!(v.type.equals("int") || v.type.equals("int[]") ||v.type.equals("boolean"))){
-			  System.out.print("Variable declared of nonexistant type");
+              System.out.print( "Type error" );
+              System.exit(0);
 		  }
 			  
 	  }
@@ -249,11 +252,13 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
 		  FuncData tempfd = ((ClassData)curcl.parent).flookup(n.f2.f0.tokenImage);
 		  if(tempfd!=null){
 			  if(!top.isParent(tempfd.ret,fd.ret)){
-				  System.out.print("Override type error");
+                  System.out.print( "Type error" );
+                  System.exit(0);
 			  }
 			  for(int i=0;i<fd.paramlist.size();i++){
 				  if(!top.isParent(tempfd.paramlist.get(i), fd.paramlist.get(i))){
-					  System.out.print("Override type error");
+                      System.out.print( "Type error" );
+                      System.exit(0);
 				  }
 			  }
 		  }
@@ -262,14 +267,16 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
 	  current = fd;
 	  if(!top.classes.containsKey(fd.ret)){
 		  if(!(fd.ret.equals("int") || fd.ret.equals("int[]") ||fd.ret.equals("boolean"))){
-			  System.out.print("Return declared of nonexistant type");
+              System.out.print( "Type error" );
+              System.exit(0);
 		  }
 	  }
 	  
 	  for(int i=0;i<fd.paramlist.size();i++){
 		  String tparam = fd.paramlist.get(i);
 		  if(!(top.classes.containsKey(tparam)||tparam.equals("int")||tparam.equals("int[]")||tparam.equals("boolean"))){
-			  System.out.print("Parameter declared of nonexistant type");
+              System.out.print( "Type error" );
+              System.exit(0);
 			  
 		  }
 	  }
@@ -286,7 +293,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f8.accept(this);
       n.f9.accept(this);
       if(!top.isParent(fd.ret, (String)n.f10.accept(this))){
-    	  System.out.print("Returned type not same as declared return type");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       n.f11.accept(this);
       n.f12.accept(this);
@@ -415,7 +423,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(!top.isParent(lexp, rexp)){
-    	  System.out.print("Assignment error");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       n.f3.accept(this);
       return null;
@@ -435,21 +444,24 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       String lexp = (String)n.f0.accept(this);
       VarData v = (VarData) ((FuncData)current).lookup(lexp);
       if(!v.type.equals("int[]")){
-    	  System.out.print("Non array indexed");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       
       n.f1.accept(this);
       n.f2.accept(this);
       if(!n.f2.accept(this).equals("int")){
-    	  System.out.print("Non integer index used");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       if(!n.f5.accept(this).equals("int")){
-    	  System.out.print("Non integer array assignment");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       n.f6.accept(this);
@@ -469,7 +481,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       if( !n.f2.accept(this).equals("boolean")){
-    	  System.out.print("non boolean if");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       n.f3.accept(this);
       n.f4.accept(this);
@@ -490,7 +503,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       if( !n.f2.accept(this).equals("boolean")){
-    	  System.out.print("non boolean while");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       n.f3.accept(this);
       n.f4.accept(this);
@@ -510,7 +524,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String ptemp =  (String)n.f2.accept(this);
       if(!ptemp.equals("int")){
-    	  System.out.print("print statement error");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       n.f3.accept(this);
       n.f4.accept(this);
@@ -542,7 +557,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(! (lexp.equals("boolean")&& (rexp.equals("boolean")))){
-    	  System.out.print("AndExpression Error");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "boolean";
@@ -558,7 +574,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(! (lexp.equals("int")&& (rexp.equals("int")))){
-    	  System.out.print("CompareExpression Error");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "boolean";
@@ -574,7 +591,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(! (lexp.equals("int")&& (rexp.equals("int")))){
-    	  System.out.print("PlusExpression Error");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "int";
@@ -591,7 +609,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(! (lexp.equals("int")&& (rexp.equals("int")))){
-    	  System.out.print("MinusExpression Error");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "int";
@@ -607,7 +626,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
       if(! (lexp.equals("int")&& (rexp.equals("int")))){
-    	  System.out.print("TimesExpression Error");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "int";
@@ -623,13 +643,15 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       String lexp = (String)n.f0.accept(this);
       //VarData v = (VarData) ((FuncData)current).lookup(lexp);
       if(!lexp.equals("int[]")){
-    	  System.out.print("Non array indexed");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       
       n.f1.accept(this);
       if(!n.f2.accept(this).equals("int")){
-    	  System.out.print("Non integer index used");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       n.f3.accept(this);
@@ -647,7 +669,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f2.accept(this);
       //VarData v = (VarData) ((FuncData)current).lookup(lexp);
       if(!lexp.equals("int[]")){
-    	  System.out.print("Non array length called");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       return (R) "int";
@@ -667,7 +690,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       String instancetype = (String) n.f0.accept(this);
 	  ClassData cd = (ClassData)(top.classes.get(instancetype));
       if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
-    	  System.out.print("Method not found");
+          System.out.print( "Type error" );
+          System.exit(0);
     	  System.exit(1);
       }
       n.f1.accept(this);
@@ -676,15 +700,19 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f4.accept(this);
       n.f5.accept(this);
       FuncData fd = cd.flookup(n.f2.f0.tokenImage);
-      if(curtypelist.size()!=fd.paramlist.size())
-    	  System.out.print("Param list length error");
+      if(curtypelist.size()!=fd.paramlist.size()){ 
+          System.out.print( "Type error" );
+          System.exit( 0);
+      }
       boolean paramflag = true;
       for(int i=0;i<curtypelist.size();i++){
     	  if(!top.isParent(fd.paramlist.get(i), curtypelist.get(i)))
     			  paramflag = false;
       }
-      if(!paramflag)
-    	  System.out.print("Parameter error");
+      if(!paramflag){
+          System.out.print( "Type error" );
+          System.exit(0);
+      }
       curtypelist = paramst.pop();
       return (R)fd.ret;
    }
@@ -822,7 +850,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f2.accept(this);
       n.f3.accept(this);
       if(!top.classes.containsKey(n.f1.f0.tokenImage)){
-    	  System.out.print("new object error");
+          System.out.print( "Type error" );
+          System.exit(0);
       }
       return (R) n.f1.f0.tokenImage;
    }

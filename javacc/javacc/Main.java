@@ -10,7 +10,7 @@ public class Main {
 		try {
 			// use the following line only in IDE
 			 Node root = new MiniJavaParser(new
-			 FileInputStream("/home/chinmay/Downloads/LinearSearch.java")).Goal();
+			 FileInputStream("/home/chinmay/Downloads/TreeVisitor.java")).Goal();
 
 			// Final submission file should take input from command line
 			//Node root = new MiniJavaParser(System.in).Goal();

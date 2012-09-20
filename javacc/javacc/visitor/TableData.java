@@ -121,6 +121,25 @@ class ProgData implements TableData{
 		return null;
 	}
 	
+	public boolean isParent(String p,String c){
+		if(p.equals(c)) return true;
+		ClassData cc;
+		cc = classes.get(c);
+		if(cc==null) return false;
+		while(cc.parent!=null){
+			if(cc.name.equals(p)){
+				return true;
+			}
+			else{
+				if(cc.parent instanceof ClassData ){
+					cc = (ClassData)cc.parent;
+				}
+				else return false;
+			}
+		}
+		return false;
+	}
+	
 }
 
 

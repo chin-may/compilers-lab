@@ -340,6 +340,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
     * f2 -> Expression()
     * f3 -> ";"
     */
+   //TODO
    public R visit(AssignmentStatement n) {
       String temp = (String)n.f0.accept(this);
       String lexp;
@@ -351,7 +352,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       }
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
-      if(!lexp.equals(rexp)){
+      if(!top.isParent(lexp, rexp)){
     	  System.out.print("Assignment error");
       }
       n.f3.accept(this);
@@ -613,7 +614,14 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f4.accept(this);
       n.f5.accept(this);
       FuncData fd = cd.flookup(n.f2.f0.tokenImage);
-      if(!fd.paramlist.equals(curtypelist))
+      if(curtypelist.size()!=fd.paramlist.size())
+    	  System.out.print("Param list length error");
+      boolean paramflag = true;
+      for(int i=0;i<curtypelist.size();i++){
+    	  if(!top.isParent(fd.paramlist.get(i), curtypelist.get(i)))
+    			  paramflag = false;
+      }
+      if(!paramflag)
     	  System.out.print("Parameter error");
       curtypelist = paramst.pop();
       return (R)fd.ret;

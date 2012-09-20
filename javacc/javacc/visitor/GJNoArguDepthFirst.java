@@ -186,7 +186,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R _ret=null;
       ClassData cd = new ClassData();
       cd.name = n.f1.f0.tokenImage;
-      cd.parent = top.lookup(n.f1.f0.tokenImage);
+      cd.parent = top.lookup(n.f3.f0.tokenImage);
       current = cd;
       top.classes.put(cd.name, cd);
       position = 0;

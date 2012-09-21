@@ -209,7 +209,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       n.f2.accept(this);
       VarData v;
-	  if(current instanceof ClassData){
+/*	  if(current instanceof ClassData){
 		  v = ((ClassData) current).attr.get(n.f1.f0.tokenImage);
 		  if(curcl.parent!=null && curcl.parent instanceof ClassData){
 			  VarData tempva = (VarData)curcl.parent.lookup(n.f1.f0.tokenImage);
@@ -218,7 +218,7 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
                   System.exit(0);
 			  }
 		  }
-	  }
+	  }*/
 	  v = (VarData)current.lookup(n.f1.f0.tokenImage);
 	  if(!top.classes.containsKey(v.type)){
 		  if(!(v.type.equals("int") || v.type.equals("int[]") ||v.type.equals("boolean"))){

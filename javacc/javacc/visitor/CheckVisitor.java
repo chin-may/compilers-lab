@@ -689,7 +689,8 @@ public class CheckVisitor<R> extends GJNoArguDepthFirst<R> {
       curtypelist = new ArrayList<String>();
       String instancetype = (String) n.f0.accept(this);
 	  ClassData cd = (ClassData)(top.classes.get(instancetype));
-      if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
+	  FuncData tmpfd = cd.flookup(n.f2.f0.tokenImage);
+      if(tmpfd == null){
           System.out.print( "Type error" );
           System.exit(0);
     	  System.exit(1);

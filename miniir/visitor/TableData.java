@@ -13,7 +13,7 @@ public interface TableData {
 
 class GoalData implements TableData {
 	String MainClass;
-	Hashtable<String, ClassData> classes = new Hashtable<>();
+	Hashtable<String, ClassData> classes = new Hashtable<String, ClassData>();
 
 	public ClassData lookup(String str) {
 		return classes.get(str);
@@ -39,6 +39,7 @@ class VarData implements TableData {
 	String name;
 	int posnum;
 	int address;
+	int varloc;
 
 	@Override
 	public TableData lookup(String str) {
@@ -56,7 +57,7 @@ class VarData implements TableData {
 class ClassData implements TableData {
 	String name;
 	Hashtable<String, VarData> attr = new Hashtable<String, VarData>();
-	Hashtable<String, FuncData> meth = new Hashtable<>();
+	Hashtable<String, FuncData> meth = new Hashtable<String, FuncData>();
 	TableData parent;
 	LinkedList<String> allfun, allatt;
 
@@ -96,8 +97,8 @@ class ClassData implements TableData {
 }
 
 class FuncData implements TableData {
-	Hashtable<String, VarData> vars = new Hashtable<>();
-	ArrayList<String> paramlist = new ArrayList<>();
+	Hashtable<String, VarData> vars = new Hashtable<String, VarData>();
+	ArrayList<String> paramlist = new ArrayList<String>();
 	String ret;
 	TableData parent;
 	String name;
@@ -124,7 +125,7 @@ class FuncData implements TableData {
 
 class ProgData implements TableData{
 	String mainclass;
-	Hashtable<String, ClassData> classes = new Hashtable<>();
+	Hashtable<String, ClassData> classes = new Hashtable<String, ClassData>();
 	
 	@Override
 	public TableData lookup(String str) {

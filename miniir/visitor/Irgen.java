@@ -15,9 +15,10 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
    // Auto class visitors--probably don't need to be overridden.
    //	String[] typearr = {"int[]", "boolean","int", "ident"};
 	ArrayList<String> curtypelist = new ArrayList<String>();
-	Stack<ArrayList<String>> paramst = new Stack<>();
+	Stack<ArrayList<String>> paramst = new Stack<ArrayList<String>>();
 	int temp = 0;
 	int objloc;
+	int lastExpLoc;
 	
    public R visit(NodeList n) {
       R _ret=null;
@@ -637,8 +638,11 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> "length"
     */
    public R visit(ArrayLength n) {
+	  int ct1;
       String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
+      ct1 = temp++;
+      gen("BEGIN HLOAD TEMP " + ct1 + " TEMP " + objloc + " 0 RETURN TEMP " +ct1);
       n.f2.accept(this);
       //VarData v = (VarData) ((FuncData)current).lookup(lexp);
 /*      if(!lexp.equals("int[]")){
@@ -666,13 +670,19 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     	  System.exit(1);
       }*/
 	  int ct1, ct2;
+	  int funnum = -1;
+	  for(int j=0; j<cd.allfun.size(); j++){
+		  if(cd.allfun.get(j).equals(n.f2.f0.tokenImage)) break;
+	  }
+	  assert(funnum > 0);
 	  ct1 =temp++;
 	  ct2 =temp++;
-	  gen(String.format("CALL BEGIN HLOAD TEMP %s TEMP %s ", ct1, ));
       n.f1.accept(this);
       n.f2.accept(this);
+	  gen(String.format("CALL BEGIN HLOAD TEMP %d TEMP %d %d  \nRETURN TEMP %d END (", ct1, objloc, funnum, ct1 ));
       n.f3.accept(this);
       n.f4.accept(this);
+      gen(" ) ");
       n.f5.accept(this);
       FuncData fd = cd.flookup(n.f2.f0.tokenImage);
 /*      if(curtypelist.size()!=fd.paramlist.size())
@@ -810,11 +820,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       int ct1,ct2;
       ct1 = temp++;
+      ct2 = temp++;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      gen("BEGIN MOVE TEMP " + ct1 + " HALLOCATE TIMES 4 ");
+      gen("BEGIN MOVE TEMP " + ct2 + " ");
       n.f3.accept(this);
+      gen("MOVE TEMP " + ct1 + " HALLOCATE TIMES 4 PLUS 1 TEMP " + ct2);
+      gen("HSTORE TEMP " + ct1 + " 0 " + " TEMP " + ct2);
       gen("RETURN TEMP " + ct1 + " END");
       n.f4.accept(this);
       return _ret;

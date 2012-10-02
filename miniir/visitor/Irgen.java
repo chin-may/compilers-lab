@@ -13,7 +13,10 @@ import java.util.*;
 public class Irgen<R> extends GJNoArguDepthFirst<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
-   //
+   //	String[] typearr = {"int[]", "boolean","int", "ident"};
+	ArrayList<String> curtypelist = new ArrayList<String>();
+	Stack<ArrayList<String>> paramst = new Stack<>();
+	
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -29,7 +32,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
          R _ret=null;
          int _count=0;
          for ( Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) {
-            e.nextElement().accept(this);
+            Node tmp = e.nextElement();
+            tmp.accept(this);
             _count++;
          }
          return _ret;
@@ -67,11 +71,13 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> <EOF>
     */
    public R visit(Goal n) {
-      R _ret=null;
+	  
+	  current = top;
+	  
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -94,7 +100,11 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f16 -> "}"
     */
    public R visit(MainClass n) {
-      R _ret=null;
+      
+      ClassData mn = top.classes.get(n.f1.f0.tokenImage);
+      curcl = mn;
+      current = mn;
+      
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -112,7 +122,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       n.f14.accept(this);
       n.f15.accept(this);
       n.f16.accept(this);
-      return _ret;
+      current = top;
+      return (R) mn;
    }
 
    /**
@@ -134,14 +145,16 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f5 -> "}"
     */
    public R visit(ClassDeclaration n) {
-      R _ret=null;
+      current = top.classes.get(n.f1.f0.tokenImage);
+      curcl = (ClassData) current;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      return _ret;
+      current = top;
+      return null;
    }
 
    /**
@@ -156,6 +169,19 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ClassExtendsDeclaration n) {
       R _ret=null;
+      //Dont know why I did this, horrible idea!
+     /* ClassData cd = new ClassData();
+      cd.name = n.f1.f0.tokenImage;
+      cd.parent = top.lookup(n.f1.f0.tokenImage);
+      if(cd.parent==null){
+    	  System.out.print("Non existant class extended");
+    	  System.exit(1);
+      }
+      current = cd;
+      top.classes.put(cd.name, cd);*/
+      ClassData cd = top.classes.get(n.f1.f0.tokenImage);
+      current = cd;
+      curcl = cd;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -164,6 +190,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       n.f5.accept(this);
       n.f6.accept(this);
       n.f7.accept(this);
+      current = top;
       return _ret;
    }
 
@@ -173,11 +200,27 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> ";"
     */
    public R visit(VarDeclaration n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      VarData v;
+/*	  if(current instanceof ClassData){
+		  v = ((ClassData) current).attr.get(n.f1.f0.tokenImage);
+		  if(curcl.parent!=null && curcl.parent instanceof ClassData){
+			  VarData tempva = (VarData)curcl.parent.lookup(n.f1.f0.tokenImage);
+			  if(tempva!=null && !top.isParent(tempva.type, v.type)){
+				  System.out.print("Override type error");
+			  }
+		  }
+	  }
+	  v = (VarData)current.lookup(n.f1.f0.tokenImage);
+	  if(!top.classes.containsKey(v.type)){
+		  if(!(v.type.equals("int") || v.type.equals("int[]") ||v.type.equals("boolean"))){
+			  System.out.print("Variable declared of nonexistant type");
+		  }
+			  
+	  }*/
+      return null;
    }
 
    /**
@@ -196,7 +239,38 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f12 -> "}"
     */
    public R visit(MethodDeclaration n) {
-      R _ret=null;
+	  FuncData fd;
+	  fd = ((ClassData) current).meth.get(n.f2.f0.tokenImage);
+/*	  if(curcl.parent!=null && curcl.parent instanceof ClassData){
+		  FuncData tempfd = ((ClassData)curcl.parent).flookup(n.f2.f0.tokenImage);
+		  if(tempfd!=null){
+			  if(!top.isParent(tempfd.ret,fd.ret)){
+				  System.out.print("Override type error");
+			  }
+			  for(int i=0;i<fd.paramlist.size();i++){
+				  if(!top.isParent(tempfd.paramlist.get(i), fd.paramlist.get(i))){
+					  System.out.print("Override type error");
+				  }
+			  }
+		  }
+	  }
+	  fd = curcl.flookup(n.f2.f0.tokenImage);
+	  current = fd;
+	  if(!top.classes.containsKey(fd.ret)){
+		  if(!(fd.ret.equals("int") || fd.ret.equals("int[]") ||fd.ret.equals("boolean"))){
+			  System.out.print("Return declared of nonexistant type");
+		  }
+	  }
+	  
+	  for(int i=0;i<fd.paramlist.size();i++){
+		  String tparam = fd.paramlist.get(i);
+		  if(!(top.classes.containsKey(tparam)||tparam.equals("int")||tparam.equals("int[]")||tparam.equals("boolean"))){
+			  System.out.print("Parameter declared of nonexistant type");
+			  
+		  }
+	  }*/
+	 
+
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -207,10 +281,10 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       n.f7.accept(this);
       n.f8.accept(this);
       n.f9.accept(this);
-      n.f10.accept(this);
       n.f11.accept(this);
       n.f12.accept(this);
-      return _ret;
+      current = curcl;
+      return null;
    }
 
    /**
@@ -229,10 +303,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f1 -> Identifier()
     */
    public R visit(FormalParameter n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -322,13 +395,23 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> Expression()
     * f3 -> ";"
     */
+   //TODO
    public R visit(AssignmentStatement n) {
-      R _ret=null;
-      n.f0.accept(this);
+/*      String temp = (String)n.f0.accept(this);
+      String lexp;
+      if(((FuncData)current).vars.containsKey(temp)){
+	       lexp = ((FuncData)current).vars.get(temp).type;
+      }
+      else{
+    	   lexp = ((VarData)curcl.lookup(temp)).type;
+      }
       n.f1.accept(this);
-      n.f2.accept(this);
+      String rexp = (String)n.f2.accept(this);
+      if(!top.isParent(lexp, rexp)){
+    	  System.out.print("Assignment error");
+      }*/
       n.f3.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -342,12 +425,26 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ArrayAssignmentStatement n) {
       R _ret=null;
-      n.f0.accept(this);
+/*      String lexp = (String)n.f0.accept(this);
+      VarData v = (VarData) ((FuncData)current).lookup(lexp);
+      if(!v.type.equals("int[]")){
+    	  System.out.print("Non array indexed");
+    	  System.exit(1);
+      }
+      
       n.f1.accept(this);
+      n.f2.accept(this);
+      if(!n.f2.accept(this).equals("int")){
+    	  System.out.print("Non integer index used");
+    	  System.exit(1);
+      }
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
-      n.f5.accept(this);
+      if(!n.f5.accept(this).equals("int")){
+    	  System.out.print("Non integer array assignment");
+    	  System.exit(1);
+      }*/
       n.f6.accept(this);
       return _ret;
    }
@@ -362,15 +459,16 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f6 -> Statement()
     */
    public R visit(IfStatement n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+/*      if( !n.f2.accept(this).equals("boolean")){
+    	  System.out.print("non boolean if");
+      }*/
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
       n.f6.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -384,7 +482,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+/*      if( !n.f2.accept(this).equals("boolean")){
+    	  System.out.print("non boolean while");
+      }*/
       n.f3.accept(this);
       n.f4.accept(this);
       return _ret;
@@ -401,7 +501,10 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      String ptemp =  (String)n.f2.accept(this);
+/*      if(!ptemp.equals("int")){
+    	  System.out.print("print statement error");
+      }*/
       n.f3.accept(this);
       n.f4.accept(this);
       return _ret;
@@ -419,9 +522,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     *       | PrimaryExpression()
     */
    public R visit(Expression n) {
-      R _ret=null;
-      n.f0.accept(this);
-      return _ret;
+      return n.f0.accept(this);
    }
 
    /**
@@ -430,11 +531,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(AndExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String) n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+/*      if(! (lexp.equals("boolean")&& (rexp.equals("boolean")))){
+    	  System.out.print("AndExpression Error");
+    	  System.exit(1);
+      }*/
+      return (R) "boolean";
    }
 
    /**
@@ -443,11 +547,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(CompareExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+/*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("CompareExpression Error");
+    	  System.exit(1);
+      }*/
+      return (R) "boolean";
    }
 
    /**
@@ -456,11 +563,15 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(PlusExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+/*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("PlusExpression Error");
+    	  System.exit(1);
+      }*/
+      return (R) "int";
+      
    }
 
    /**
@@ -469,11 +580,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(MinusExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+/*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("MinusExpression Error");
+    	  System.exit(1);
+      }*/
+      return (R) "int";
    }
 
    /**
@@ -482,11 +596,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(TimesExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+      String rexp = (String)n.f2.accept(this);
+/*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
+    	  System.out.print("TimesExpression Error");
+    	  System.exit(1);
+      }*/
+      return (R) "int";
    }
 
    /**
@@ -496,12 +613,20 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f3 -> "]"
     */
    public R visit(ArrayLookup n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
+      //VarData v = (VarData) ((FuncData)current).lookup(lexp);
+/*      if(!lexp.equals("int[]")){
+    	  System.out.print("Non array indexed");
+    	  System.exit(1);
+      }*/
+      
       n.f1.accept(this);
-      n.f2.accept(this);
+/*      if(!n.f2.accept(this).equals("int")){
+    	  System.out.print("Non integer index used");
+    	  System.exit(1);
+      }*/
       n.f3.accept(this);
-      return _ret;
+      return (R) "int";
    }
 
    /**
@@ -510,11 +635,15 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> "length"
     */
    public R visit(ArrayLength n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      //VarData v = (VarData) ((FuncData)current).lookup(lexp);
+/*      if(!lexp.equals("int[]")){
+    	  System.out.print("Non array length called");
+    	  System.exit(1);
+      }*/
+      return (R) "int";
    }
 
    /**
@@ -526,14 +655,31 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f5 -> ")"
     */
    public R visit(MessageSend n) {
-      R _ret=null;
-      n.f0.accept(this);
+	   paramst.push(curtypelist);
+      curtypelist = new ArrayList<String>();
+      String instancetype = (String) n.f0.accept(this);
+	  ClassData cd = (ClassData)(top.classes.get(instancetype));
+/*      if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
+    	  System.out.print("Method not found");
+    	  System.exit(1);
+      }*/
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      return _ret;
+      FuncData fd = cd.flookup(n.f2.f0.tokenImage);
+/*      if(curtypelist.size()!=fd.paramlist.size())
+    	  System.out.print("Param list length error");
+      boolean paramflag = true;
+      for(int i=0;i<curtypelist.size();i++){
+    	  if(!top.isParent(fd.paramlist.get(i), curtypelist.get(i)))
+    			  paramflag = false;
+      }
+      if(!paramflag)
+    	  System.out.print("Parameter error");*/
+      curtypelist = paramst.pop();
+      return (R)fd.ret;
    }
 
    /**
@@ -541,10 +687,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f1 -> ( ExpressionRest() )*
     */
    public R visit(ExpressionList n) {
-      R _ret=null;
-      n.f0.accept(this);
+	  curtypelist.add((String)n.f0.accept(this));
       n.f1.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -552,10 +697,10 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f1 -> Expression()
     */
    public R visit(ExpressionRest n) {
-      R _ret=null;
+	  curtypelist.add((String)n.f1.accept(this));
       n.f0.accept(this);
       n.f1.accept(this);
-      return _ret;
+      return null;
    }
 
    /**
@@ -571,8 +716,30 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(PrimaryExpression n) {
       R _ret=null;
-      n.f0.accept(this);
-      return _ret;
+      R temp = n.f0.accept(this);
+      String[] primExpAr = {"int", "boolean","boolean", "id","this", "arrayalloc","not","brac"};
+      switch(n.f0.which){
+      case 0:
+    	  return (R) "int";
+      case 1:
+    	  return (R) "boolean";
+      case 2:
+    	  return (R) "boolean";
+      case 3:
+    	  return (R) ((VarData)current.lookup((String)temp)).type;
+      case 4:
+    	  return (R) (curcl.name);
+      case 5:
+    	  return (R)"int[]";
+      case 6:
+    	  return (R) temp;
+      case 7:
+    	  return (R) "boolean";
+      case 8:
+    	  return (R) temp;
+	  default:
+    	  return null;
+      }
    }
 
    /**
@@ -606,9 +773,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f0 -> <IDENTIFIER>
     */
    public R visit(Identifier n) {
-      R _ret=null;
       n.f0.accept(this);
-      return _ret;
+      return (R) n.f0.tokenImage;
    }
 
    /**
@@ -644,12 +810,14 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f3 -> ")"
     */
    public R visit(AllocationExpression n) {
-      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
-      return _ret;
+      if(!top.classes.containsKey(n.f1.f0.tokenImage)){
+    	  System.out.print("new object error");
+      }
+      return (R) n.f1.f0.tokenImage;
    }
 
    /**
@@ -669,11 +837,11 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> ")"
     */
    public R visit(BracketExpression n) {
-      R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      return (R)n.f1.accept(this);
    }
+
+
 
 }

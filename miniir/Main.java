@@ -17,8 +17,10 @@ public class Main {
 
 			System.out.println("Program parsed successfully");
 			GJNoArguDepthFirst gjv = new GJNoArguDepthFirst();
-			root.accept(gjv); // Your assignment part is
+			root.accept(gjv); 
 
+			Irgen irv = new Irgen();
+			root.accept(irv); 
 		} catch (Throwable e) {
 			System.out.println(e.toString());
 		}

@@ -16,7 +16,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
    //	String[] typearr = {"int[]", "boolean","int", "ident"};
 	ArrayList<String> curtypelist = new ArrayList<String>();
 	Stack<ArrayList<String>> paramst = new Stack<ArrayList<String>>();
-	int temp = 0;
+	int temp = 30;
+	int clabel = 1;
 	int objloc;
 	int lastExpLoc;
 	
@@ -534,9 +535,22 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(AndExpression n) {
+	  int l1 = clabel++; //false label
+	  int l2 = clabel++; //end label
+	  int ct1 = temp++;
+	  gen("BEGIN CJUMP ");
       String lexp = (String) n.f0.accept(this);
+      gen("L" + l1);
       n.f1.accept(this);
+      gen("CJUMP ");
       String rexp = (String)n.f2.accept(this);
+      gen("L" + l1);
+      gen("MOVE TEMP " + ct1 + " 1 ");
+      gen("JUMP L" + l2);
+      gen("L" + l1 );
+      gen("MOVE TEMP " + ct1 + " 0 ");
+      gen("L" + l2 + "NOOP");
+      gen("\nRETURN TEMP " +ct1 + " END ");
 /*      if(! (lexp.equals("boolean")&& (rexp.equals("boolean")))){
     	  System.out.print("AndExpression Error");
     	  System.exit(1);
@@ -550,7 +564,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(CompareExpression n) {
+	  gen("LT ");
       String lexp = (String)n.f0.accept(this);
+      gen(" ");
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
 /*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
@@ -566,7 +582,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(PlusExpression n) {
+	  gen("PLUS ");
       String lexp = (String)n.f0.accept(this);
+      gen(" ");
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
 /*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
@@ -583,7 +601,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(MinusExpression n) {
+	  gen("MINUS ");
       String lexp = (String)n.f0.accept(this);
+      gen(" ");
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
 /*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
@@ -599,7 +619,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(TimesExpression n) {
+	  gen("TIMES ");
       String lexp = (String)n.f0.accept(this);
+      gen(" ");
       n.f1.accept(this);
       String rexp = (String)n.f2.accept(this);
 /*      if(! (lexp.equals("int")&& (rexp.equals("int")))){
@@ -616,6 +638,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     * f3 -> "]"
     */
    public R visit(ArrayLookup n) {
+	  int ct1 = temp++;
+	  gen("BEGIN HLOAD TEMP " + ct1 + " PLUS ");
       String lexp = (String)n.f0.accept(this);
       //VarData v = (VarData) ((FuncData)current).lookup(lexp);
 /*      if(!lexp.equals("int[]")){
@@ -624,6 +648,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       }*/
       
       n.f1.accept(this);
+      gen("TIMES 4 PLUS 1");
+      n.f2.accept(this);
+      gen("0 \nRETURN TEMP " + ct1 + "\nEND ");
 /*      if(!n.f2.accept(this).equals("int")){
     	  System.out.print("Non integer index used");
     	  System.exit(1);
@@ -639,10 +666,11 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ArrayLength n) {
 	  int ct1;
+      ct1 = temp++;
+	  gen("BEGIN HLOAD TEMP " + ct1 );
       String lexp = (String)n.f0.accept(this);
       n.f1.accept(this);
-      ct1 = temp++;
-      gen("BEGIN HLOAD TEMP " + ct1 + " TEMP " + objloc + " 0 RETURN TEMP " +ct1);
+      gen(" 0 \nRETURN TEMP " +ct1 + " END ");
       n.f2.accept(this);
       //VarData v = (VarData) ((FuncData)current).lookup(lexp);
 /*      if(!lexp.equals("int[]")){
@@ -663,23 +691,23 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
    public R visit(MessageSend n) {
 	   paramst.push(curtypelist);
       curtypelist = new ArrayList<String>();
+	  int ct1;
+	  ct1 =temp++;
+      gen(String.format("CALL BEGIN HLOAD TEMP %d ",ct1));
       String instancetype = (String) n.f0.accept(this);
 	  ClassData cd = (ClassData)(top.classes.get(instancetype));
 /*      if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
     	  System.out.print("Method not found");
     	  System.exit(1);
       }*/
-	  int ct1, ct2;
 	  int funnum = -1;
 	  for(int j=0; j<cd.allfun.size(); j++){
-		  if(cd.allfun.get(j).equals(n.f2.f0.tokenImage)) break;
+		  if(cd.allfun.get(j).equals(n.f2.f0.tokenImage)) funnum = j ;
 	  }
-	  assert(funnum > 0);
-	  ct1 =temp++;
-	  ct2 =temp++;
+	  assert(funnum >= 0);
       n.f1.accept(this);
       n.f2.accept(this);
-	  gen(String.format("CALL BEGIN HLOAD TEMP %d TEMP %d %d  \nRETURN TEMP %d END (", ct1, objloc, funnum, ct1 ));
+	  gen(String.format("%d  \nRETURN TEMP %d END ( ",  4 + 4*funnum, ct1 ));
       n.f3.accept(this);
       n.f4.accept(this);
       gen(" ) ");
@@ -745,6 +773,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       case 3:
     	  VarData t =(VarData)current.lookup((String)temp);
     	  assert(t!=null);
+    	  gen("TEMP " + t.varloc);
     	  return (R) t.type;
       case 4:
     	  return (R) (curcl.name);
@@ -848,9 +877,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       gen("BEGIN \n MOVE TEMP " +ct1 +" HALLOCATE " + (cd.allatt.size() + cd.allfun.size() + 1) * 4 );
       gen("HSTORE TEMP " + ct1 + " 0 " + cd.allfun.size());
       for(FuncData f:cd.meth.values()){
-    	  gen("HSTORE TEMP " + ct1 + " " + i++ + " " + cd.getClassName(f.name) + "_" + f.name);
+    	  gen("HSTORE TEMP " + ct1 + " " + (1 + i++) * 4 + " " + cd.getClassName(f.name) + "_" + f.name + " ");
       }
-      gen("RETURN TEMP " + ct1 + "\n END");
+      gen("RETURN TEMP " + ct1 + "\n END ");
       
       n.f2.accept(this);
       n.f3.accept(this);

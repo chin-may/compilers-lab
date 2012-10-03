@@ -10,17 +10,10 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
-public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
+public class ParentSetter<R> extends GJNoArguDepthFirst<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-	TableData current;
-	public static ProgData top;
-	ClassData curcl;
-	int position;
-	String[] typearr = {"int[]", "boolean","int", "ident"};
-	
-	
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -74,14 +67,19 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> <EOF>
     */
    public R visit(Goal n) {
-	  ProgData prog = new ProgData();
-	  current = prog;
-	  top = prog;
-	  prog.mainclass = n.f0.f1.f0.tokenImage;
+      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return (R) prog;
+      for(ClassData cd: top.classes.values()){
+    	  top.setAllFun(cd);
+    	  top.setAllAtt(cd);
+      }
+	  ClassData m = top.classes.get(top.mainclass);
+	  m.allfun = new LinkedList<String>();
+	  m.allfun.add("main");
+	  m.allatt = new LinkedList<String>();
+      return _ret;
    }
 
    /**
@@ -104,18 +102,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f16 -> "}"
     */
    public R visit(MainClass n) {
-      ClassData mn = new ClassData();
-      mn.name = n.f1.f0.tokenImage;
-      mn.parent = top;
-      curcl = mn;
-      top.classes.put(mn.name, mn);
-      FuncData main = new FuncData();
-      main.ret = "void";
-      mn.meth.put("main", main);
-      main.parent = mn;
-      current = main;
-      position = 0;
-      curcl = mn;
+      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -133,8 +120,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f14.accept(this);
       n.f15.accept(this);
       n.f16.accept(this);
-      current = top;
-      return (R) mn;
+      return _ret;
    }
 
    /**
@@ -156,25 +142,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f5 -> "}"
     */
    public R visit(ClassDeclaration n) {
-	  if(top.classes.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Class redeclared");
-		  System.exit(1);
-	  }
-      ClassData cd = new ClassData();
-      cd.name = n.f1.f0.tokenImage;
-      cd.parent = top;
-      current = cd;
-      top.classes.put(cd.name, cd);
-      position = 0;
-      curcl = cd;
+      R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      current = top;
-      return (R)cd;
+      return _ret;
    }
 
    /**
@@ -188,18 +163,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f7 -> "}"
     */
    public R visit(ClassExtendsDeclaration n) {
-	  if(top.classes.containsKey(n.f1.f0.tokenImage)){
-		  System.out.print("Class redeclared");
-		  System.exit(1);
-	  }
       R _ret=null;
-      ClassData cd = new ClassData();
-      cd.name = n.f1.f0.tokenImage;
-      //cd.parent = top.lookup(n.f3.f0.tokenImage);
-      current = cd;
-      top.classes.put(cd.name, cd);
-      position = 0;
-      curcl = cd;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -208,7 +172,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f5.accept(this);
       n.f6.accept(this);
       n.f7.accept(this);
-      current = top;
+      
+      if(!top.classes.containsKey(n.f3.f0.tokenImage)){
+    	  System.out.print("Non existant class extended");
+      }
+      ClassData cd = top.classes.get(n.f1.f0.tokenImage);
+      cd.parent = top.classes.get(n.f3.f0.tokenImage);
+      
       return _ret;
    }
 
@@ -218,25 +188,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f2 -> ";"
     */
    public R visit(VarDeclaration n) {
-	  VarData v= new VarData();
-	  v.prev = current;
-	  if(n.f0.f0.which != 3){
-		  v.type = typearr[n.f0.f0.which];
-	      n.f0.accept(this);
-	  }
-	  else{
-		  v.type = (String) n.f0.accept(this);
-	  }
+      R _ret=null;
+      n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      if (current instanceof ClassData){
-    	  ((ClassData)current).attr.put(n.f1.f0.tokenImage, v);
-      }
-      else if (current instanceof FuncData) {
-    	  ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
-	 }
-      v.name = n.f1.f0.tokenImage;
-      return (R) v;
+      return _ret;
    }
 
    /**
@@ -255,26 +211,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f12 -> "}"
     */
    public R visit(MethodDeclaration n) {
-	  if(((ClassData)current).meth.containsKey(n.f2.f0.tokenImage)){
-		  System.out.print("Method redeclared");
-		  System.exit(1);
-	  }
-	  FuncData fun = new FuncData();
-	  fun.name = n.f2.f0.tokenImage;
-	  fun.parent = curcl;
-	  curcl.meth.put(n.f2.f0.tokenImage, fun);
-	  current = fun;
-	  position =0;
+      R _ret=null;
       n.f0.accept(this);
-      
-	  if(n.f1.f0.which != 3){
-		  fun.ret = typearr[n.f1.f0.which];
-	      n.f1.accept(this);
-	  }
-	  else{
-		  fun.ret = (String) n.f1.accept(this);
-	  }
-      
+      n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
@@ -286,8 +225,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f10.accept(this);
       n.f11.accept(this);
       n.f12.accept(this);
-      current = curcl;
-      return (R) fun;
+      return _ret;
    }
 
    /**
@@ -307,20 +245,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(FormalParameter n) {
       R _ret=null;
-      VarData v = new VarData();
-      v.prev = current;
-	  if(n.f0.f0.which != 3){
-		  v.type = typearr[n.f0.f0.which];
-	      n.f1.accept(this);
-	  }
-	  else{
-		  v.type = (String) n.f0.accept(this);
-	  }
-      ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
-      ((FuncData)current).paramlist.add(v.type);
       n.f0.accept(this);
       n.f1.accept(this);
-      return (R) v;
+      return _ret;
    }
 
    /**
@@ -341,8 +268,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     *       | Identifier()
     */
    public R visit(Type n) {
-      String objecttype =(String) n.f0.accept(this);
-      return (R)objecttype;
+      R _ret=null;
+      n.f0.accept(this);
+      return _ret;
    }
 
    /**
@@ -693,8 +621,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f0 -> <IDENTIFIER>
     */
    public R visit(Identifier n) {
+      R _ret=null;
       n.f0.accept(this);
-      return (R)n.f0.tokenImage;
+      return _ret;
    }
 
    /**

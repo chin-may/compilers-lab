@@ -2,6 +2,7 @@ package visitor;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedList;
 
 
 public interface TableData {
@@ -35,6 +36,9 @@ class ClassAttr {
 class VarData implements TableData {
 	String type;
 	TableData prev;
+	String name;
+	int posnum;
+	int address;
 
 	@Override
 	public TableData lookup(String str) {
@@ -54,6 +58,7 @@ class ClassData implements TableData {
 	Hashtable<String, VarData> attr = new Hashtable<String, VarData>();
 	Hashtable<String, FuncData> meth = new Hashtable<>();
 	TableData parent;
+	LinkedList<String> allfun, allatt;
 
 	@Override
 	public TableData lookup(String str) {
@@ -81,6 +86,12 @@ class ClassData implements TableData {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	public String getClassName(String fun){
+		if(meth.containsKey(fun)) return name;
+		else if(parent instanceof ClassData) return ((ClassData) parent).getClassName(fun);
+		assert(false);
+		return null;
+	}
 
 }
 
@@ -89,6 +100,8 @@ class FuncData implements TableData {
 	ArrayList<String> paramlist = new ArrayList<>();
 	String ret;
 	TableData parent;
+	String name;
+	int locnum;
 
 	public TableData lookup(String str) {
 		TableData pr = vars.get(str);
@@ -151,6 +164,41 @@ class ProgData implements TableData{
 			}
 		}
 		return false;
+	}
+	
+	public LinkedList<String> setAllAtt(ClassData cd){
+		if(cd.parent instanceof ProgData){
+			cd.allatt = new LinkedList<String>();
+			for(VarData v:cd.attr.values()){
+				cd.allatt.add(v.name);
+			}
+			return cd.allatt;
+		}
+		else{
+			cd.allatt = setAllAtt((ClassData)cd.parent);
+			for(VarData v:cd.attr.values()){
+				if(!cd.allatt.contains(v.name))cd.allatt.add(v.name);
+			}
+			return cd.allatt;
+			
+		}
+	}
+	public LinkedList<String> setAllFun(ClassData cd){
+		if(cd.parent instanceof ProgData){
+			cd.allfun = new LinkedList<String>();
+			for(FuncData f:cd.meth.values()){
+				cd.allfun.add(f.name);
+			}
+			return cd.allfun;
+		}
+		else{
+			cd.allfun = setAllFun((ClassData)cd.parent);
+			for(FuncData f:cd.meth.values()){
+				if(!cd.allfun.contains(f.name))cd.allfun.add(f.name);
+			}
+			return cd.allfun;
+			
+		}
 	}
 	
 }

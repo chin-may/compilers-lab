@@ -455,7 +455,6 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ArrayAssignmentStatement n) {
       R _ret=null;
-      assert(current instanceof FuncData);
       if(((FuncData)current).vars.containsKey(n.f0.f0.tokenImage)){
 	      gen("\nHSTORE PLUS TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
 	      gen("TIMES 4 PLUS 1 ");
@@ -772,7 +771,6 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
 	  for(int j=0; j<cd.allfun.size(); j++){
 		  if(cd.allfun.get(j).equals(n.f2.f0.tokenImage)) funnum = j ;
 	  }
-	  assert(funnum >= 0);
       n.f1.accept(this);
       n.f2.accept(this);
       gen("hload temp " + ct1 + " temp " + ct3 + " 0 ");
@@ -843,7 +841,6 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       case 3:
     	  if(((FuncData)current).vars.containsKey((String)tempr)){
     		  VarData t = ((FuncData)current).vars.get((String)tempr);
-	    	  assert(t!=null);
 	    	  gen("TEMP " + t.varloc + " ");
 	    	  return (R) t.type;
     	  }
@@ -852,7 +849,6 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     		  gen("\nbegin\n hload temp "+ ct1 +" temp 0 " + (1+curcl.getAttrNum((String)tempr))*4 + " \nreturn\n temp " + ct1 + " \nend \n");
     		  return (R) ((VarData)curcl.lookup((String)tempr)).type;
     	  }
-    	  else assert(false);
       case 4:
     	  return (R) (curcl.name);
       case 5:

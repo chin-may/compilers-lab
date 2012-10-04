@@ -90,7 +90,6 @@ class ClassData implements TableData {
 	public String getClassName(String fun){
 		if(meth.containsKey(fun)) return name;
 		else if(parent instanceof ClassData) return ((ClassData) parent).getClassName(fun);
-		assert(false);
 		return null;
 	}
 	public int getAttrNum(String att){
@@ -103,7 +102,6 @@ class ClassData implements TableData {
 			if(s.equals(att)) return j;
 			j++;
 		}*/
-		assert(false);
 		return -1;
 	}
 
@@ -140,7 +138,6 @@ class FuncData implements TableData {
 			if(f.equals(s)) return j;
 			j++;
 		}
-		assert(false);
 		return -1;
 	}
 

@@ -10,11 +10,11 @@ public class Simplify {
 	public static void main(String[] args) throws FileNotFoundException, ParseException {
 	//	try {
 			// use the following line only in IDE
-			 Node root = new MiniJavaParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/tests/test35.java")).Goal();
+//			 Node root = new MiniJavaParser(new
+//			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/tests/test35.java")).Goal();
 
 			// Final submission file should take input from command line
-		//	Node root = new MiniJavaParser(System.in).Goal();
+			Node root = new MiniJavaParser(System.in).Goal();
 
 		//	System.out.println("Program parsed successfully");
 			GJNoArguDepthFirst gjv = new GJNoArguDepthFirst();

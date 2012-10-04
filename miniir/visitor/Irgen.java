@@ -429,13 +429,13 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     	  System.out.print("Assignment error");
       }*/
 	  if(((FuncData)current).vars.containsKey(n.f0.f0.tokenImage)){
-		  gen("MOVE TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
+		  gen("\nMOVE TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
 	      n.f0.accept(this);
 	      n.f1.accept(this);
 	      n.f2.accept(this);
 	  }
 	  else{
-		  gen("hstore temp 0 " + (1 + curcl.getAttrNum(n.f0.f0.tokenImage))*4 + " ");
+		  gen("\nhstore temp 0 " + (1 + curcl.getAttrNum(n.f0.f0.tokenImage))*4 + " ");
 	      n.f0.accept(this);
 	      n.f1.accept(this);
 	      n.f2.accept(this);
@@ -457,7 +457,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       assert(current instanceof FuncData);
       if(((FuncData)current).vars.containsKey(n.f0.f0.tokenImage)){
-	      gen("HSTORE PLUS TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
+	      gen("\nHSTORE PLUS TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
 	      gen("TIMES 4 PLUS 1 ");
 	      n.f0.accept(this);
 	      n.f1.accept(this);
@@ -469,8 +469,8 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       }
       else if(curcl.allatt.contains(n.f0.f0.tokenImage)){
     	  int ct1 = temp++;
-    	  gen("hload temp " + ct1 + " temp 0 " + (1+curcl.getAttrNum(n.f0.f0.tokenImage)*4 ) + " ");
-    	  gen("hstore plus temp " + ct1 + " times 4 plus 1 ");
+    	  gen("hload temp " + ct1 + " temp 0 " + (1+curcl.getAttrNum(n.f0.f0.tokenImage))*4 + " ");
+    	  gen("\nhstore plus temp " + ct1 + " times 4 plus 1 ");
 	      n.f0.accept(this);
 	      n.f1.accept(this);
 	      n.f2.accept(this);
@@ -611,11 +611,11 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       gen("CJUMP ");
       String rexp = (String)n.f2.accept(this);
       gen("L" + l1 + " ");
-      gen("MOVE TEMP " + ct1 + " 1 ");
-      gen("JUMP L" + l2);
+      gen("\nMOVE TEMP " + ct1 + " 1 ");
+      gen("JUMP L" + l2 + " ");
       gen("L" + l1 + " ");
-      gen("MOVE TEMP " + ct1 + " 0 ");
-      gen("L" + l2 + "NOOP\n");
+      gen("\nMOVE TEMP " + ct1 + " 0 ");
+      gen("L" + l2 + " NOOP\n");
       gen("\nRETURN\n TEMP " +ct1 + " END ");
 /*      if(! (lexp.equals("boolean")&& (rexp.equals("boolean")))){
     	  System.out.print("AndExpression Error");
@@ -928,13 +928,25 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       int ct1,ct2;
       ct1 = temp++;
       ct2 = temp++;
+      int ct3 = temp++;
+      int ct4 = temp++;
+      int l1 = clabel++; //start label
+      int l2 = clabel++; //end label
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       gen("\nBEGIN\n MOVE TEMP " + ct2 + " ");
       n.f3.accept(this);
-      gen("MOVE TEMP " + ct1 + " HALLOCATE TIMES 4 PLUS 1 TEMP " + ct2 + " ");
-      gen("HSTORE TEMP " + ct1 + " 0 " + " TEMP " + ct2 + " ");
+      gen("\nMOVE TEMP " + ct1 + " HALLOCATE TIMES 4 PLUS 1 TEMP " + ct2 + " ");
+      gen("\nHSTORE TEMP " + ct1 + " 0 " + " TEMP " + ct2 + " ");
+      gen("move temp " + ct3 + " temp " + ct1 );
+      gen("\nL"+ l1 + " NOOP\n");
+      gen("move temp " + ct4 + " plus temp " + ct3 + " 4 \n");
+      gen("move temp " + ct3 + " temp " + ct4);
+      gen("cjump lt temp " + ct3 + " plus temp " + ct1 + " times 4 temp " + ct2 + " L" + l2 + " ");
+      gen("hstore temp " + ct3 + " 0 0");
+      gen("jump L" + l1 + " ");
+      gen("\nL" + l2 + " noop\n");
       gen("\nRETURN\n TEMP " + ct1 + " END\n");
       n.f4.accept(this);
       return _ret;
@@ -962,13 +974,13 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       */
       gen("\nBEGIN \n MOVE TEMP " + ct1 + " HALLOCATE " + (cd.allatt.size() + 1) * 4 + " ");
       for(int k = 0; k< cd.allatt.size(); k++){
-    	  gen("hstore temp " + ct1 + " " + (k+1)*4 + " 0 ");
+    	  gen("\nhstore temp " + ct1 + " " + (k+1)*4 + " 0 ");
       }
       gen("\nMOVE TEMP " + ct2 + " HALLOCATE " + cd.allfun.size()*4 + " ");
-      for(FuncData f:cd.meth.values()){
-    	  gen("HSTORE TEMP " + ct2 + " " + i++ * 4 + " " + cd.getClassName(f.name) + "_" + f.name + " \n");
+      for(String f:cd.allfun){
+    	  gen("\nHSTORE TEMP " + ct2 + " " + i++ * 4 + " " + cd.getClassName(f) + "_" + f+ " \n");
       }
-      gen("hstore temp " + ct1 + " 0 temp " + ct2 + " ");
+      gen("\nhstore temp " + ct1 + " 0 temp " + ct2 + " ");
       gen("\nRETURN\n TEMP " + ct1 + " END \n");
       
       n.f2.accept(this);

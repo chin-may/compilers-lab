@@ -11,12 +11,12 @@ public class Main {
 	//	try {
 			// use the following line only in IDE
 			 Node root = new MiniJavaParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/TreeVisitor.java")).Goal();
+			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/Factorial.java")).Goal();
 
 			// Final submission file should take input from command line
 			//Node root = new MiniJavaParser(System.in).Goal();
 
-			System.out.println("Program parsed successfully");
+		//	System.out.println("Program parsed successfully");
 			GJNoArguDepthFirst gjv = new GJNoArguDepthFirst();
 			root.accept(gjv); 
 			

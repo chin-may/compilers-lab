@@ -94,11 +94,15 @@ class ClassData implements TableData {
 		return null;
 	}
 	public int getAttrNum(String att){
-		int j = 0;
-		for(String s:allatt){
+		int j = allatt.size() - 1;
+		while(j>=0){
+			if(allatt.get( j ).equals(att)) return j;
+			j--;
+		}
+/*		for(String s:allatt){
 			if(s.equals(att)) return j;
 			j++;
-		}
+		}*/
 		assert(false);
 		return -1;
 	}
@@ -198,7 +202,7 @@ class ProgData implements TableData{
 		else{
 			cd.allatt = setAllAtt((ClassData)cd.parent);
 			for(VarData v:cd.attr.values()){
-				if(!cd.allatt.contains(v.name))cd.allatt.add(v.name);
+				cd.allatt.add(v.name);
 			}
 			return cd.allatt;
 			

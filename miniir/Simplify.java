@@ -11,7 +11,7 @@ public class Simplify {
 	//	try {
 			// use the following line only in IDE
 			 Node root = new MiniJavaParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/tests/BinarySearch.java")).Goal();
+			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/tests/test35.java")).Goal();
 
 			// Final submission file should take input from command line
 		//	Node root = new MiniJavaParser(System.in).Goal();

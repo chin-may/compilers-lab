@@ -318,6 +318,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
 	  }
       ((FuncData)current).vars.put(n.f1.f0.tokenImage, v);
       ((FuncData)current).paramlist.add(v.type);
+      ((FuncData)current).paramIDlist.add(n.f1.f0.tokenImage);
       n.f0.accept(this);
       n.f1.accept(this);
       return (R) v;

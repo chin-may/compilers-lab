@@ -93,12 +93,22 @@ class ClassData implements TableData {
 		assert(false);
 		return null;
 	}
+	public int getAttrNum(String att){
+		int j = 0;
+		for(String s:allatt){
+			if(s.equals(att)) return j;
+			j++;
+		}
+		assert(false);
+		return -1;
+	}
 
 }
 
 class FuncData implements TableData {
 	Hashtable<String, VarData> vars = new Hashtable<String, VarData>();
 	ArrayList<String> paramlist = new ArrayList<String>();
+	ArrayList<String> paramIDlist = new ArrayList<String>();
 	String ret;
 	TableData parent;
 	String name;
@@ -118,6 +128,16 @@ class FuncData implements TableData {
 	public String getType(String var) {
 		
 		return null;
+	}
+	
+	public int getFormalNum(String s){
+		int j = 0;
+		for(String f:paramIDlist){
+			if(f.equals(s)) return j;
+			j++;
+		}
+		assert(false);
+		return -1;
 	}
 
 }

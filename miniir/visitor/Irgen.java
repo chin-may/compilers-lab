@@ -208,6 +208,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       n.f1.accept(this);
       n.f2.accept(this);
       VarData v;
+      if(current instanceof FuncData){
+    	  ((FuncData)current).vars.get(n.f1.f0.tokenImage).varloc = temp++;
+      }
 /*	  if(current instanceof ClassData){
 		  v = ((ClassData) current).attr.get(n.f1.f0.tokenImage);
 		  if(curcl.parent!=null && curcl.parent instanceof ClassData){
@@ -315,6 +318,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(FormalParameter n) {
 	  formalParamNum++;
+	  ((FuncData)current).vars.get(n.f1.f0.tokenImage).varloc = formalParamNum;
       n.f0.accept(this);
       n.f1.accept(this);
       return null;
@@ -422,10 +426,18 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       if(!top.isParent(lexp, rexp)){
     	  System.out.print("Assignment error");
       }*/
-	  gen("MOVE TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
+	  if(((FuncData)current).vars.containsKey(n.f0.f0.tokenImage)){
+		  gen("MOVE TEMP " + ((FuncData)current).vars.get(n.f0.f0.tokenImage).varloc + " ");
+	      n.f0.accept(this);
+	      n.f1.accept(this);
+	      n.f2.accept(this);
+	  }
+	  else{
+		  gen("hstore temp 0 " + (1 + curcl.getAttrNum(n.f0.f0.tokenImage))*4 );
+	      n.f0.accept(this);
+	      n.f1.accept(this);
+	      n.f2.accept(this);
+	  }
       n.f3.accept(this);
       return null;
    }
@@ -730,7 +742,9 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       curtypelist = new ArrayList<String>();
 	  int ct1;
 	  ct1 =temp++;
-      gen(String.format("CALL BEGIN HLOAD TEMP %d ",ct1));
+	  int ct2 = temp++;
+	  int ct3 = temp++;
+      gen("CALL BEGIN move TEMP " + ct3);
       String instancetype = (String) n.f0.accept(this);
 	  ClassData cd = (ClassData)(top.classes.get(instancetype));
 /*      if(!cd.meth.containsKey(n.f2.f0.tokenImage)){
@@ -744,7 +758,10 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
 	  assert(funnum >= 0);
       n.f1.accept(this);
       n.f2.accept(this);
-	  gen(String.format("%d  \nRETURN TEMP %d END ( ",  4 + 4*funnum, ct1 ));
+      gen("hload temp " + ct1 + " temp " + ct3 + " 0 ");
+      gen("hload temp " + ct2 + " TEMP " + ct1 + " " + 4*funnum);
+      gen("return temp " + ct2 + " \nend ( temp " + ct3 + " ");
+//	  gen(String.format("%d  \nRETURN TEMP %d END ( ",  4 + 4*funnum, ct1 ));
       n.f3.accept(this);
       n.f4.accept(this);
       gen(" ) ");
@@ -797,7 +814,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(PrimaryExpression n) {
       R _ret=null;
-      R temp = n.f0.accept(this);
+      R tempr = n.f0.accept(this);
       
       String[] primExpAr = {"int", "boolean","boolean", "id","this", "arrayalloc","not","brac"};
       switch(n.f0.which){
@@ -808,20 +825,28 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       case 2:
     	  return (R) "boolean";
       case 3:
-    	  VarData t =(VarData)current.lookup((String)temp);
-    	  assert(t!=null);
-    	  gen("TEMP " + t.varloc);
-    	  return (R) t.type;
+    	  if(((FuncData)current).vars.containsKey((String)tempr)){
+    		  VarData t = ((FuncData)current).vars.get((String)tempr);
+	    	  assert(t!=null);
+	    	  gen("TEMP " + t.varloc + " ");
+	    	  return (R) t.type;
+    	  }
+    	  else if(curcl.allatt.contains((String)tempr)){
+    		  int ct1 = temp++;
+    		  gen("begin hload temp "+ ct1 +" temp 0 " + (1+curcl.getAttrNum((String)tempr))*4 + " return temp " + ct1 + " end ");
+    		  return (R) ((VarData)curcl.lookup((String)tempr)).type;
+    	  }
+    	  else assert(false);
       case 4:
     	  return (R) (curcl.name);
       case 5:
     	  return (R)"int[]";
       case 6:
-    	  return (R) temp;
+    	  return (R) tempr;
       case 7:
     	  return (R) "boolean";
       case 8:
-    	  return (R) temp;
+    	  return (R) tempr;
 	  default:
     	  return null;
       }
@@ -909,13 +934,22 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       int ct1 = temp++;
-      int i = 1;
+      int ct2 = temp++;
+      int i = 0;
       ClassData cd = top.classes.get(n.f1.f0.tokenImage);
-      gen("BEGIN \n MOVE TEMP " +ct1 +" HALLOCATE " + (cd.allatt.size() + cd.allfun.size() + 1) * 4 );
+/*      gen("BEGIN \n MOVE TEMP " +ct1 +" HALLOCATE " + (cd.allatt.size() + cd.allfun.size() + 1) * 4 );
       gen("HSTORE TEMP " + ct1 + " 0 " + cd.allfun.size());
       for(FuncData f:cd.meth.values()){
     	  gen("HSTORE TEMP " + ct1 + " " + (1 + i++) * 4 + " " + cd.getClassName(f.name) + "_" + f.name + " ");
       }
+      gen("RETURN TEMP " + ct1 + "\n END ");
+      */
+      gen("BEGIN \n MOVE TEMP " + ct1 + " HALLOCATE" + (cd.allatt.size() + 1) * 4 + " ");
+      gen("\nMOVE TEMP " + ct2 + " HALLOCATE " + cd.allfun.size()*4 + " ");
+      for(FuncData f:cd.meth.values()){
+    	  gen("HSTORE TEMP " + ct2 + " " + i++ * 4 + " " + cd.getClassName(f.name) + "_" + f.name + " \n");
+      }
+      gen("hstore temp " + ct1 + " 0 temp " + ct2 + " ");
       gen("RETURN TEMP " + ct1 + "\n END ");
       
       n.f2.accept(this);
@@ -947,7 +981,7 @@ public class Irgen<R> extends GJNoArguDepthFirst<R> {
    }
 
    void gen(String s){
-	   System.out.print(s);
+	   System.out.print(s.toUpperCase());
    }
 
 }

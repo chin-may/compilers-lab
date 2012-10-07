@@ -10,11 +10,10 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
-public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
+public class OrigGJ<R> implements GJNoArguVisitor<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-   int temp = 500;
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -71,10 +70,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Goal n) {
       R _ret=null;
-      gen("main\n");
       n.f0.accept(this);
       n.f1.accept(this);
-      gen("end\n");
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
@@ -99,16 +96,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Procedure n) {
       R _ret=null;
-      gen(n.f0.f0.tokenImage + " [ " + n.f2.f0.tokenImage + " ]\n");
+      n.f0.accept(this);
       n.f1.accept(this);
-      
+      n.f2.accept(this);
       n.f3.accept(this);
-      gen("begin\n");
-      n.f4.f1.accept(this);
-      int rt = (Integer)n.f4.f3.accept(this);
-      gen("return temp " +rt + "\nend\n");
-      
-      return null;
+      n.f4.accept(this);
+      return _ret;
    }
 
    /**
@@ -133,7 +126,6 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    public R visit(NoOpStmt n) {
       R _ret=null;
       n.f0.accept(this);
-      gen("noop\n");
       return _ret;
    }
 
@@ -153,10 +145,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(CJumpStmt n) {
       R _ret=null;
-      int ct1;
       n.f0.accept(this);
-      ct1 = (Integer) n.f1.accept(this);
-      gen("cjump temp " + ct1 + " " + n.f2.f0.tokenImage + "\n");
+      n.f1.accept(this);
+      n.f2.accept(this);
       return _ret;
    }
 
@@ -167,7 +158,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    public R visit(JumpStmt n) {
       R _ret=null;
       n.f0.accept(this);
-      gen("jump " + n.f1.f0.tokenImage + "\n");
+      n.f1.accept(this);
       return _ret;
    }
 
@@ -179,11 +170,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(HStoreStmt n) {
       R _ret=null;
-      int ct1, ct2;
       n.f0.accept(this);
-      ct1 = (Integer)n.f1.accept(this);
-      ct2 = (Integer)n.f3.accept(this);
-      gen("hstore temp " + ct1 + " " + n.f2.f0.tokenImage + " temp " + ct2 + "\n");
+      n.f1.accept(this);
+      n.f2.accept(this);
+      n.f3.accept(this);
       return _ret;
    }
 
@@ -195,12 +185,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(HLoadStmt n) {
       R _ret=null;
-      int ct1;
-      ct1 = (Integer)n.f2.accept(this);
       n.f0.accept(this);
-      gen("hload ");
-      int rt = (Integer)n.f1.accept(this);
-      gen("temp " + rt + " temp "+ ct1 + " " + n.f3.f0.tokenImage + "\n");
+      n.f1.accept(this);
+      n.f2.accept(this);
+      n.f3.accept(this);
       return _ret;
    }
 
@@ -211,12 +199,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(MoveStmt n) {
       R _ret=null;
-      int ct,rt;
-      Integer temp = (Integer)n.f2.accept(this);
-      ct = temp;
       n.f0.accept(this);
-      rt = (Integer)n.f1.accept(this);
-      gen("move temp "+rt + " temp " + ct + "\n");
+      n.f1.accept(this);
+      n.f2.accept(this);
       return _ret;
    }
 
@@ -226,9 +211,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(PrintStmt n) {
       R _ret=null;
-      int ct = (Integer)n.f1.accept(this);
       n.f0.accept(this);
-      gen("print temp " + ct + "\n");
+      n.f1.accept(this);
       return _ret;
    }
 
@@ -242,16 +226,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     *       | Label()
     */
    public R visit(Exp n) {
-	  if(n.f0.which == 6){
-		  int ct = temp++;
-		  gen("move temp " + ct  + " ");
-		  n.f0.accept(this);
-		  return (R)(Integer) ct;
-	  }
-	  else{
-	      R _ret=n.f0.accept(this);
-	      return  _ret;
-	  }
+      R _ret=null;
+      n.f0.accept(this);
+      return (R)(Integer) 5;
    }
 
    /**
@@ -263,13 +240,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(StmtExp n) {
       R _ret=null;
-      int ct ;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      ct = (Integer)n.f3.accept(this);
+      n.f3.accept(this);
       n.f4.accept(this);
-      return (R)(Integer) ct;
+      return _ret;
    }
 
    /**
@@ -281,22 +257,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Call n) {
       R _ret=null;
-      int[] temps = new int[n.f3.nodes.size()];
-      int ct;
-      int ct2 =temp++;
+      Object o = n.f3.accept(this);
       n.f0.accept(this);
-      ct =(Integer) n.f1.accept(this);
-      for(int i=0; i< temps.length; i++){
-    	  temps[i] = (Integer)n.f3.elementAt(i).accept(this);
-      }
-      gen("move temp " + ct2 + " call temp " + ct + " ( ");
-      for(int i=0; i< temps.length; i++){
-    	  gen("temp " + temps[i] + " " );
-      }
-      gen(" )\n");
+      n.f1.accept(this);
       n.f2.accept(this);
       n.f4.accept(this);
-      return (R)(Integer)ct2;
+      return _ret;
    }
 
    /**
@@ -305,12 +271,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(HAllocate n) {
       R _ret=null;
-      int ct2 = temp++;
-      Integer temp = (Integer) n.f1.accept(this);
-      int ct = temp;
       n.f0.accept(this);
-      gen("move temp " + ct2 + " hallocate temp " + ct + " ");
-      return (R)(Integer)ct2;
+      n.f1.accept(this);
+      return _ret;
    }
 
    /**
@@ -320,14 +283,10 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(BinOp n) {
       R _ret=null;
-      String[] ops = {" LT ", " plus ", " minus ", " times "};
-      int ct1, ct2;
-      int ct3 = temp++;
       n.f0.accept(this);
-      ct1 = (Integer) n.f1.accept(this);
-      ct2 = (Integer) n.f2.accept(this);
-      gen("move temp " + ct3 + " " +ops[n.f0.f0.which] + " temp " + ct1 + " temp " + ct2 + "\n");
-      return (R)(Integer)ct3;
+      n.f1.accept(this);
+      n.f2.accept(this);
+      return _ret;
    }
 
    /**
@@ -349,7 +308,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    public R visit(Temp n) {
       R _ret=null;
       n.f0.accept(this);
-      return (R)(Integer)  Integer.parseInt(n.f1.f0.tokenImage);
+      n.f1.accept(this);
+      return _ret;
    }
 
    /**
@@ -357,10 +317,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(IntegerLiteral n) {
       R _ret=null;
-      int ct = temp++;
-      gen("move temp " + ct + " " + n.f0.tokenImage + "\n");
       n.f0.accept(this);
-      return (R) (Integer) ct;
+      return _ret;
    }
 
    /**
@@ -368,14 +326,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Label n) {
       R _ret=null;
-      gen(n.f0.tokenImage + " ");
       n.f0.accept(this);
-      return null;
+      return _ret;
    }
    
    void gen(String s){
-	   System.out.print(s.toUpperCase());
-	   s.toString();
+	   System.out.print(s);
    }
 
 }

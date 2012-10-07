@@ -5,17 +5,18 @@ import java.io.InputStream;
 import syntaxtree.*;
 import visitor.*;
 
-public class Simplify {
+public class Simplify2 {
 	public static void main(String[] args) throws FileNotFoundException, ParseException {
 	//	try {
 			// use the following line only in IDE
 			 Node root = new MiniIRParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/Factorial.miniIR")).Goal();
+			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/BinaryTree.miniIR")).Goal();
 
 			// Final submission file should take input from command line
 		//	Node root = new MiniIRParser(System.in).Goal();
 
 		//	System.out.println("Program parsed successfully");
+			 root.accept(new OrigGJ());
 			GJNoArguDepthFirst gjv = new GJNoArguDepthFirst();
 			root.accept(gjv); 
 			

@@ -1,347 +1,66 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
-<html><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<title>BNF for miniRA.jj</title>
-</head>
-<body>
-<h1 align="CENTER">BNF for miniRA.jj</h1>
-<h2 align="CENTER">NON-TERMINALS</h2>
-<table>
-<tbody><tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod1">Goal</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"MAIN" "[" <a href="#prod6">IntegerLiteral</a> "]" "[" <a href="#prod6">IntegerLiteral</a> "]" "[" <a href="#prod6">IntegerLiteral</a> "]" <a href="#prod2">StmtList</a> "END" ( <a href="#prod3">Procedure</a> )* &lt;EOF&gt;<!--
-TD-->
-</td></tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod2">StmtList</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">( ( <a href="#prod4">Label</a> )? <a href="#prod5">Stmt</a> )*</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod3">Procedure</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod4">Label</a> "[" <a href="#prod6">IntegerLiteral</a> "]" "[" <a href="#prod6">IntegerLiteral</a> "]" "[" <a href="#prod6">IntegerLiteral</a> "]" <a href="#prod2">StmtList</a> "END" </td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod5">Stmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod8">NoOpStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod9">ErrorStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod10">CJumpStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod11">JumpStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod12">HStoreStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod13">HLoadStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod14">MoveStmt</a></td>
-</tr>
-<tr> 
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod15">PrintStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod16">ALoadStmt</a></td>
-</tr>
-<tr>
-</tr><tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod16a">AStoreStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod16b">PassArgStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod21">CallStmt</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod8">NoOpStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"NOOP"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod9">ErrorStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"ERROR"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod10">CJumpStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"CJUMP" <a href="#prod17">Reg</a> <a href="#prod4">Label</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod11">JumpStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"JUMP" <a href="#prod4">Label</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod12">HStoreStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"HSTORE" <a href="#prod17">Reg</a> <a href="#prod6">IntegerLiteral</a> <a href="#prod17">Reg</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod13">HLoadStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"HLOAD" <a href="#prod17">Reg</a> <a href="#prod17">Reg</a> <a href="#prod6">IntegerLiteral</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod14">MoveStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"MOVE" <a href="#prod17">Reg</a> <a href="#prod18">Exp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod15">PrintStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"PRINT" <a href="#prod19">SimpleExp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod16">ALoadStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"ALOAD" <a href="#prod17">Reg</a> <a href="#prod20">SpilledArg</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod16a">AStoreStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"ASTORE" <a href="#prod20">SpilledArg</a> <a href="#prod17">Reg</a> </td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod16b">PassArgStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"PASSARG"  <a href="#prod6">IntegerLiteral</a> <a href="#prod17">Reg</a> </td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod21">CallStmt</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"CALL" <a href="#prod19">SimpleExp</a></td>
-</tr>
-<tr>
-</tr><tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod18">Exp</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod22">HAllocate</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod23">BinOp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod19">SimpleExp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod22">HAllocate</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"HALLOCATE" <a href="#prod19">SimpleExp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod23">BinOp</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod24">Operator</a> <a href="#prod17">Reg</a> <a href="#prod19">SimpleExp</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod24">Operator</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"LT"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"PLUS"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"MINUS"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"TIMES"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod20">SpilledArg</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"SPILLEDARG" <a href="#prod6">IntegerLiteral</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod19">SimpleExp</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod17">Reg</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod6">IntegerLiteral</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE"><a href="#prod4">Label</a></td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod17">Reg</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">"a0"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"a1"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"a2"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"a3"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t0"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t1"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t2"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t3"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t4"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t5"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t6"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t7"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s0"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s1"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s2"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s3"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s4"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s5"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s6"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"s7"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t8"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"t9"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"v0"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"></td>
-<td align="CENTER" valign="BASELINE">|</td>
-<td align="LEFT" valign="BASELINE">"v1"</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod6">IntegerLiteral</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">&lt;INTEGER_LITERAL&gt;</td>
-</tr>
-<tr>
-<td align="RIGHT" valign="BASELINE"><a name="prod4">Label</a></td>
-<td align="CENTER" valign="BASELINE">::=</td>
-<td align="LEFT" valign="BASELINE">&lt;IDENTIFIER&gt;</td>
-</tr>
-</tbody></table>
-
-
-
-</body></html>
+Goal	::=	"MAIN" "[" IntegerLiteral "]" "[" IntegerLiteral "]" "[" IntegerLiteral "]" StmtList "END" ( Procedure )* <EOF>
+StmtList	::=	( ( Label )? Stmt )*
+Procedure	::=	Label "[" IntegerLiteral "]" "[" IntegerLiteral "]" "[" IntegerLiteral "]" StmtList "END"
+Stmt	::=	NoOpStmt
+|	ErrorStmt
+|	CJumpStmt
+|	JumpStmt
+|	HStoreStmt
+|	HLoadStmt
+|	MoveStmt
+|	PrintStmt
+|	ALoadStmt
+|	AStoreStmt
+|	PassArgStmt
+|	CallStmt
+NoOpStmt	::=	"NOOP"
+ErrorStmt	::=	"ERROR"
+CJumpStmt	::=	"CJUMP" Reg Label
+JumpStmt	::=	"JUMP" Label
+HStoreStmt	::=	"HSTORE" Reg IntegerLiteral Reg
+HLoadStmt	::=	"HLOAD" Reg Reg IntegerLiteral
+MoveStmt	::=	"MOVE" Reg Exp
+PrintStmt	::=	"PRINT" SimpleExp
+ALoadStmt	::=	"ALOAD" Reg SpilledArg
+AStoreStmt	::=	"ASTORE" SpilledArg Reg
+PassArgStmt	::=	"PASSARG" IntegerLiteral Reg
+CallStmt	::=	"CALL" SimpleExp
+Exp	::=	HAllocate
+|	BinOp
+|	SimpleExp
+HAllocate	::=	"HALLOCATE" SimpleExp
+BinOp	::=	Operator Reg SimpleExp
+Operator	::=	"LT"
+|	"PLUS"
+|	"MINUS"
+|	"TIMES"
+SpilledArg	::=	"SPILLEDARG" IntegerLiteral
+SimpleExp	::=	Reg
+|	IntegerLiteral
+|	Label
+Reg	::=	"a0"
+|	"a1"
+|	"a2"
+|	"a3"
+|	"t0"
+|	"t1"
+|	"t2"
+|	"t3"
+|	"t4"
+|	"t5"
+|	"t6"
+|	"t7"
+|	"s0"
+|	"s1"
+|	"s2"
+|	"s3"
+|	"s4"
+|	"s5"
+|	"s6"
+|	"s7"
+|	"t8"
+|	"t9"
+|	"v0"
+|	"v1"
+IntegerLiteral	::=	<INTEGER_LITERAL>
+Label	::=	<IDENTIFIER>

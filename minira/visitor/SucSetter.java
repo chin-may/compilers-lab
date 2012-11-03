@@ -265,6 +265,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       StmNode curr = new StmNode();
       curr.suc.add(inum+1);
+      curr.use.addAll((Collection)n.f1.accept(this));
       currproc.nodes.add(curr);
       inum++;
       n.f0.accept(this);

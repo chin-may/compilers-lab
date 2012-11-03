@@ -7,16 +7,17 @@ public class StmNode {
 	public Set<Integer> suc;
 	public Set<Integer> pred;
 	public Set<Integer> use;
-	public Set<Integer> def;
+	public int def;
 	public Set<Integer> lin;
 	public Set<Integer> lout;
+	public Set<Integer> lin_o;
+	public Set<Integer> lout_o;
 	public String stm;
 	
 	StmNode(){
 		suc = new HashSet<>();
 		pred = new HashSet<>();
 		use = new HashSet<>();
-		def = new HashSet<>();
 		lin = new HashSet<>();
 		lout = new HashSet<>();
 	}
@@ -25,7 +26,6 @@ public class StmNode {
 		suc = new HashSet<>();
 		pred = new HashSet<>();
 		use = new HashSet<>();
-		def = new HashSet<>();
 		lin = new HashSet<>();
 		lout = new HashSet<>();
 		this.stm = stm;

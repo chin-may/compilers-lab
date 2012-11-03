@@ -10,6 +10,7 @@ public class ProcData {
 	int argnum;
 	ArrayList<Integer> bp;
 	ArrayList<String> backlabel;
+	HashMap<Integer,RangePair> ranges;
 
 	public ProcData(String lbl, int argn) {
 		nodes = new ArrayList<StmNode>();
@@ -18,6 +19,7 @@ public class ProcData {
 		argnum  = argn;
 		bp = new ArrayList<Integer>();
 		backlabel = new ArrayList<String>();
+		ranges = new HashMap<Integer, RangePair>();
 	}
 	
 }

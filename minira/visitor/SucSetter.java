@@ -120,6 +120,45 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  currproc.nodes.get(sucnum).pred.add(i);
     	  }
       }
+      
+      //Do liveness analysis
+      boolean test = true;
+      while(test){
+    	  for(int i = currproc.nodes.size() - 1; i >= 0; i--){
+    		  StmNode sn = currproc.nodes.get(i);
+    		  sn.lin_o = new HashSet<>(sn.lin);
+    		  sn.lout_o = new HashSet<>(sn.lout);
+    		  Set<Integer> temp = new HashSet<Integer>(sn.lout);
+    		  if(temp.contains(sn.def)) temp.remove(sn.def);
+    		  temp.addAll(sn.use);
+    		  sn.lin = temp;
+    		  sn.lout = new HashSet<>();
+    		  for(Integer s:sn.suc){
+    			  sn.lout.addAll(currproc.nodes.get(s).lin);
+    		  }
+    	  }
+    	  test = false;
+    	  for(StmNode sn:currproc.nodes){
+    		  if(!sn.lin.equals(sn.lin_o) || !sn.lout.equals(sn.lout_o)){
+    			  test = true;
+    			  break;
+    		  }
+    	  }
+    	  
+      }
+      //Saving live ranges
+      for (int i = 0; i < currproc.nodes.size(); i++) {
+    	  StmNode currstm = currproc.nodes.get(i);
+    	  for (Integer tempvar : currstm.lout) {
+    		  if (!currproc.ranges.containsKey(tempvar)) {
+    			  currproc.ranges.put(tempvar, new RangePair(i, i));
+    		  } else {
+    			  currproc.ranges.get(tempvar).end = i;
+    		  }
+    	  }
+      }
+
+      
       return _ret;
    }
 
@@ -227,7 +266,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       StmNode curr = new StmNode();
       curr.suc.add(inum+1);
-      curr.def.add(Integer.parseInt(n.f1.f1.f0.tokenImage));
+      curr.def = Integer.parseInt(n.f1.f1.f0.tokenImage);
       curr.use.add(Integer.parseInt(n.f2.f1.f0.tokenImage));
       currproc.nodes.add(curr);
       inum++;
@@ -247,7 +286,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       StmNode curr = new StmNode();
       curr.suc.add(inum+1);
-      curr.def.add(Integer.parseInt(n.f1.f1.f0.tokenImage));
+      curr.def = Integer.parseInt(n.f1.f1.f0.tokenImage);
       curr.use.addAll((Collection)n.f2.accept(this));
       currproc.nodes.add(curr);
       inum++;

@@ -11,6 +11,8 @@ public class ProcData {
 	ArrayList<Integer> bp;
 	ArrayList<String> backlabel;
 	HashMap<Integer,RangePair> ranges;
+	int stackspace;
+	int maxcall;
 
 	public ProcData(String lbl, int argn) {
 		nodes = new ArrayList<StmNode>();
@@ -20,6 +22,8 @@ public class ProcData {
 		bp = new ArrayList<Integer>();
 		backlabel = new ArrayList<String>();
 		ranges = new HashMap<Integer, RangePair>();
+		stackspace = 0;
+		maxcall = 0;
 	}
 	
 }

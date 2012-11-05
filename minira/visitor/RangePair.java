@@ -10,6 +10,7 @@ public class RangePair implements Comparable<RangePair>{
 	public RangePair(int s, int e, int ro) {
 		start = s;
 		end = e;
+		rangeof = ro;
 	}
 
 	@Override

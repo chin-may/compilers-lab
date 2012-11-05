@@ -179,7 +179,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     	  freeReg.add(i);
       }
       
-      int stackloc = Integer.parseInt(n.f2.f0.tokenImage) - 3;
+      int stackloc = Integer.parseInt(n.f2.f0.tokenImage) - 4;
       if(stackloc < 0)  stackloc = 0;
       for(int i = 0; i < liveint.size(); i++){
     	  for(int j = 0; j<liveint.size(); j++){
@@ -211,12 +211,25 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  Collections.sort(active);
     	  }
       }
-      currproc.stackspace = stackloc;
+      currproc.stacktop = stackloc;
+      currproc.stackspace = stackloc + 9;
       for(RangePair rp:liveint){
     	  currproc.ranges.get(rp.rangeof).location = rp.location;
     	  currproc.ranges.get(rp.rangeof).isReg = rp.isReg;
       }
       
+      for(int i = 0; i < Integer.parseInt(n.f2.f0.tokenImage); i++){
+    	  RangePair rp = new RangePair(0, currproc.nodes.size(),i);
+    	  if(i<4){
+    		  rp.isReg = true;
+    		  rp.location = 20 + i;
+    	  }
+    	  else{
+    		  rp.isReg = false;
+    		  rp.location = i - 4;
+    	  }
+    	  currproc.ranges.put(i, rp);
+      }
       
       return _ret;
    }

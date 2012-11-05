@@ -12,6 +12,7 @@ public class ProcData {
 	ArrayList<String> backlabel;
 	HashMap<Integer,RangePair> ranges;
 	int stackspace;
+	int stacktop;
 	int maxcall;
 
 	public ProcData(String lbl, int argn) {

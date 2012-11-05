@@ -279,10 +279,15 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     	  for (Integer tempvar : currstm.lout) {
     		  if (!currproc.ranges.containsKey(tempvar)) {
     			  currproc.ranges.put(tempvar, new RangePair(i, i, tempvar));
-    		  } else {
-    			  currproc.ranges.get(tempvar).end = i;
-    		  }
+    		  } 
     	  }
+      }
+      for (int i = 0; i < currproc.nodes.size(); i++) {
+    	  StmNode currstm = currproc.nodes.get(i);
+    	  for (Integer tempvar : currstm.lin) {
+    		  currproc.ranges.get(tempvar).end = i;
+    	  }
+
       }
       
       ArrayList<RangePair> liveint = new ArrayList<RangePair>();
@@ -309,11 +314,13 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       int stackloc = Integer.parseInt(n.f2.f0.tokenImage) - 4;
       if(stackloc < 0)  stackloc = 0;
       for(int i = 0; i < liveint.size(); i++){
+    	  LinkedList<Integer> expirelst = new LinkedList<Integer>();
     	  for(int j = 0; j<liveint.size(); j++){
     		  if(liveint.get(j).end >= liveint.get(i).start)
     			  break;
-    		  liveint.remove(j);
+    		  expirelst.add(j);
     	  }
+    	  liveint.removeAll(expirelst);
     	  if(active.size() == 18){
     		  RangePair spill = active.get(active.size() - 1);
     		  if(spill.end > liveint.get(i).end){

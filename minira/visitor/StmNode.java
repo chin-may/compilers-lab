@@ -20,6 +20,7 @@ public class StmNode {
 		use = new HashSet<>();
 		lin = new HashSet<>();
 		lout = new HashSet<>();
+		def = -1;
 	}
 
 	StmNode(String stm){
@@ -29,5 +30,6 @@ public class StmNode {
 		lin = new HashSet<>();
 		lout = new HashSet<>();
 		this.stm = stm;
+		def = -1;
 	}
 }

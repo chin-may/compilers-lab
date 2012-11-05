@@ -68,13 +68,140 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     * f4 -> <EOF>
     */
    public R visit(Goal n) {
-      R _ret=null;
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      n.f3.accept(this);
-      n.f4.accept(this);
-      return _ret;
+	   R _ret=null;
+
+
+	   inum = 0;
+	   currproc = new ProcData("MAIN", 0);
+	   procs.put("MAIN", currproc); 
+	   currproc.argnum = 0;
+	   n.f0.accept(this);
+	   n.f1.accept(this);
+	   n.f2.accept(this);
+	   currproc.nodes.get(inum - 1).suc.remove(inum);
+	   for(int i = 0; i < currproc.bp.size(); i++){
+		   int loc = currproc.bp.get(i);
+		   String lab = currproc.backlabel.get(i);
+		   int labloc = currproc.labeltable.get(lab);
+		   currproc.nodes.get(loc).suc.add(labloc);
+	   }
+	   //Set predecessors based on successors.
+	   for(int i = 0; i< currproc.nodes.size(); i++){
+		   for(Integer sucnum:currproc.nodes.get(i).suc){
+			   currproc.nodes.get(sucnum).pred.add(i);
+		   }
+	   }
+
+	   //Do liveness analysis
+	   boolean test = true;
+	   while(test){
+		   for(int i = currproc.nodes.size() - 1; i >= 0; i--){
+			   StmNode sn = currproc.nodes.get(i);
+			   sn.lin_o = new HashSet<>(sn.lin);
+			   sn.lout_o = new HashSet<>(sn.lout);
+			   Set<Integer> temp = new HashSet<Integer>(sn.lout);
+			   if(temp.contains(sn.def)) temp.remove(sn.def);
+			   temp.addAll(sn.use);
+			   sn.lin = temp;
+			   sn.lout = new HashSet<>();
+			   for(Integer s:sn.suc){
+				   sn.lout.addAll(currproc.nodes.get(s).lin);
+			   }
+		   }
+		   test = false;
+		   for(StmNode sn:currproc.nodes){
+			   if(!sn.lin.equals(sn.lin_o) || !sn.lout.equals(sn.lout_o)){
+				   test = true;
+				   break;
+			   }
+		   }
+
+	   }
+	   //Saving live ranges
+	   for (int i = 0; i < currproc.nodes.size(); i++) {
+		   StmNode currstm = currproc.nodes.get(i);
+		   for (Integer tempvar : currstm.lout) {
+			   if (!currproc.ranges.containsKey(tempvar)) {
+				   currproc.ranges.put(tempvar, new RangePair(i, i, tempvar));
+			   } 
+		   }
+	   }
+	   
+	   for (int i = 0; i < currproc.nodes.size(); i++) {
+		   StmNode currstm = currproc.nodes.get(i);
+		   for (Integer tempvar : currstm.lin) {
+			   currproc.ranges.get(tempvar).end = i;
+		   }
+		   
+	   }
+
+	   ArrayList<RangePair> liveint = new ArrayList<RangePair>();
+	   for(RangePair rp:currproc.ranges.values()){
+		   liveint.add(rp);
+	   }
+	   Collections.sort(liveint, new Comparator<RangePair>(){
+
+		   @Override
+		   public int compare(RangePair o1, RangePair o2) {
+			   if(o1.start > o2.start) return 1;
+			   if(o1.start < o2.start) return -1;
+			   return 0;
+		   }
+	   });
+	   ArrayList<RangePair> active = new ArrayList<RangePair>();
+	   int[] locations = new int[currproc.ranges.size()];
+	   boolean[] isReg = new boolean[currproc.ranges.size()];
+	   List<Integer> freeReg = new LinkedList<Integer>();
+	   for(int i=0; i < 19; i++){
+		   freeReg.add(i);
+	   }
+
+	   int stackloc = 0;
+	   for(int i = 0; i < liveint.size(); i++){
+		   LinkedList<Integer> expirelst = new LinkedList<Integer>();
+		   for(int j = 0; j<liveint.size(); j++){
+			   if(liveint.get(j).end >= liveint.get(i).start)
+				   break;
+			   expirelst.add(j);
+		   }
+		   liveint.removeAll(expirelst);
+		   if(active.size() == 18){
+			   RangePair spill = active.get(active.size() - 1);
+			   if(spill.end > liveint.get(i).end){
+				   int k;
+				   for(k=0; k<liveint.size(); k++)
+					   if(liveint.get(i).rangeof == liveint.get(k).rangeof) break;
+				   locations[i] = locations[k];
+				   isReg[k] = false;
+				   locations[k] = stackloc++;
+			   }
+			   else{
+				   isReg[i] = false;
+				   locations[i] = stackloc++;
+			   }
+
+		   }
+		   else{
+			   int curreg = freeReg.remove(0);
+			   locations[i] = curreg;
+			   isReg[i] = true;
+			   active.add(liveint.get(i));
+			   Collections.sort(active);
+		   }
+	   }
+	   currproc.stacktop = stackloc;
+	   currproc.stackspace = stackloc + 9;
+	   for(RangePair rp:liveint){
+		   currproc.ranges.get(rp.rangeof).location = rp.location;
+		   currproc.ranges.get(rp.rangeof).isReg = rp.isReg;
+	   }
+
+	   n.f3.accept(this);
+	   n.f4.accept(this);
+
+
+
+	   return _ret;
    }
 
    /**
@@ -94,10 +221,10 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     * f4 -> StmtExp()
     */
    public R visit(Procedure n) {
-	   StmNode prev = currproc.nodes.get(currproc.nodes.size() - 1);
+/*	   StmNode prev = currproc.nodes.get(currproc.nodes.size() - 1);
 	   if(prev.suc.contains(inum)){ 
 		   prev.suc.remove(inum ); //TODO should be inum - 1??
-	   }
+	   }*/
 	   inum = 0;
 	   currproc = new ProcData(n.f0.f0.tokenImage, Integer.parseInt(n.f2.f0.tokenImage));
 	   procs.put(n.f0.f0.tokenImage, currproc); 
@@ -391,10 +518,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     *       | SimpleExp()
     */
    public R visit(Exp n) {
-	  if(n.f0.which == 0){
-		  return (R)new HashSet<Integer>();
-	  }
-      return (R)n.f0.accept(this);
+      return n.f0.accept(this);
    }
 
    /**
@@ -409,7 +533,10 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      n.f3.accept(this);
+      //This is for the 'return' instruction
+      StmNode curr = new StmNode();
+      curr.use.addAll((Collection)n.f3.accept(this));
+      currproc.nodes.add(curr);
       n.f4.accept(this);
       return _ret;
    }
@@ -477,7 +604,8 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(SimpleExp n) {
 	  if(n.f0.which == 0){
-      Set<Integer> tmp = new HashSet<>((Integer)n.f0.accept(this));
+      Set<Integer> tmp = new HashSet<>();
+      tmp.add( (Integer)n.f0.accept(this));
       return (R) tmp;}
 	  else{
 		  return (R) new HashSet<Integer>();
@@ -491,6 +619,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
    public R visit(Temp n) {
       n.f0.accept(this);
       n.f1.accept(this);
+      Integer dbg_ret = (Integer)Integer.parseInt( n.f1.f0.tokenImage);
       return (R)(Integer)Integer.parseInt( n.f1.f0.tokenImage);
    }
 

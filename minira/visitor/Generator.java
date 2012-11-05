@@ -78,6 +78,9 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     * f4 -> <EOF>
     */
    public R visit(Goal n) {
+	  currproc = procs.get("MAIN");
+	  currstack = currproc.stacktop;
+	  emit("MAIN" + " [  0  " + currproc.stackspace + " "+ currproc.maxcall + " ]\n" );
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);

@@ -23,6 +23,9 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
 	String[] opStr = {" lt ", " plus ", " minus ", " times "};
 	int currloc = 0;
 	int currstack = 0;
+	
+	int exploc = -1;
+	
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -267,6 +270,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     * f2 -> Exp()
     */
    public R visit(MoveStmt n) {
+	  exploc = Integer.parseInt(n.f1.f1.f0.tokenImage);
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -280,8 +284,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(PrintStmt n) {
       R _ret=null;
+      exploc = 18;
       n.f0.accept(this);
       n.f1.accept(this);
+      emit("print v0");
       return _ret;
    }
 
@@ -292,7 +298,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     *       | SimpleExp()
     */
    public R visit(Exp n) {
-      
+	   
 	   return n.f0.accept(this);
    }
 
@@ -308,8 +314,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
+      exploc = 18;
       n.f3.accept(this);
       n.f4.accept(this);
+      emit("end");
       return _ret;
    }
 
@@ -324,9 +332,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       StmNode st = currproc.nodes.get(currloc);
       Stack<RangePair> tmpstack = new Stack<>();
+      //TODO only caller saved register should be saved here
       for(Integer ot:st.lout){
     	  RangePair var = currproc.ranges.get(ot);
-    	  if(var.isReg){
+    	  if(var.isReg && var.location > 10){
     		  emit("astore spilledarg " + currstack + regStr[var.location] + "\n");
     		  tmpstack.push(var);
     		  currstack++;
@@ -335,7 +344,6 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f2.accept(this);
       n.f4.accept(this);
-      n.f1.accept(this);
       int paramnum = 0;
       for(Node nod:n.f3.nodes){
     	  Temp tm = (Temp) nod;
@@ -359,12 +367,20 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  }
     	  paramnum++;
       }
-      
+      int expbak=exploc;
+      exploc = 18;
       //The actual call
-      emit("call v0");
+      
       while(!tmpstack.empty()){
     	  RangePair var = tmpstack.pop();
     	  emit("aload " + regStr[var.location] + " spilledarg "+ --currstack + "\n");
+      }
+      RangePair retvar = currproc.ranges.get(expbak);
+      if(retvar.isReg){
+    	  emit("move " + regStr[retvar.location] + "v0");
+      }
+      else{
+    	  emit("astore spilledarg " + retvar.location + " v0");
       }
       return _ret;
    }
@@ -376,7 +392,8 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    public R visit(HAllocate n) {
       n.f0.accept(this);
       Integer loc = (Integer)n.f1.accept(this);
-      emit("move v0 hallocate " + regStr[loc] + "\n");
+     //TODO 
+     // emit("move v0 hallocate " + regStr[loc] + "\n");
       return (R) (Integer)18;
    }
 
@@ -440,6 +457,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  emit("move v0 " + ((Label)n.f0.choice).f0.tokenImage + "\n");
 		  return (R) (Integer) 18;
       }
+      System.out.println("xxxxxxxxxx");
       System.exit(1);
       return null;
    }

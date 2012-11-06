@@ -122,7 +122,6 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
-      emit("end");
       return _ret;
    }
 
@@ -275,6 +274,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
+      exploc = -1;
       return _ret;
    }
 
@@ -284,10 +284,26 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(PrintStmt n) {
       R _ret=null;
-      exploc = 18;
       n.f0.accept(this);
-      n.f1.accept(this);
-      emit("print v0");
+      
+      SimpleExp sim = n.f1;
+      
+      switch(sim.f0.which){
+      case 0:
+    	  Temp tm = (Temp)sim.f0.choice;
+    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    	  if(var.isReg){
+    		  emit("print " + regStr[var.location]);
+    	  }
+    	  else{
+    		  emit("aload v0 spilledarg " + var.location);
+    		  emit("print v0");
+    	  }
+    	  break;
+      case 1:
+    	  emit("print " + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+      }
+      
       return _ret;
    }
 
@@ -314,9 +330,24 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      exploc = 18;
-      n.f3.accept(this);
       n.f4.accept(this);
+      
+      SimpleExp sim = n.f3;
+      switch(sim.f0.which){
+      case 0:
+    	  Temp tm = (Temp) sim.f0.choice;
+    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    	  if(var.isReg){
+    		  emit("move v0 " + regStr[var.location]);
+    	  }
+    	  else{
+    		  emit("aload v0 spilledarg " + var.location);
+    	  }
+    	  break;
+      case 1:
+    	  emit("move v0 " + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+      }
+      
       emit("end");
       return _ret;
    }
@@ -367,15 +398,31 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  }
     	  paramnum++;
       }
-      int expbak=exploc;
-      exploc = 18;
+      
+      SimpleExp sim = n.f1;
+      Temp tm;
       //The actual call
+      if(sim.f0.choice instanceof Temp){
+    	  tm = (Temp) sim.f0.choice;
+    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    	  if(var.isReg){
+    		  emit("call " + regStr[var.location]);
+    	  }
+    	  else{
+    		  emit("move v0 spilledarg " + var.location);
+    		  emit("call v0");
+    	  }
+      }
+      else{
+    	  System.out.println("xxxxx function call");
+      }
+      
       
       while(!tmpstack.empty()){
     	  RangePair var = tmpstack.pop();
     	  emit("aload " + regStr[var.location] + " spilledarg "+ --currstack + "\n");
       }
-      RangePair retvar = currproc.ranges.get(expbak);
+      RangePair retvar = currproc.ranges.get(exploc);
       if(retvar.isReg){
     	  emit("move " + regStr[retvar.location] + "v0");
       }
@@ -391,9 +438,51 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(HAllocate n) {
       n.f0.accept(this);
-      Integer loc = (Integer)n.f1.accept(this);
-     //TODO 
-     // emit("move v0 hallocate " + regStr[loc] + "\n");
+      RangePair destvar = currproc.ranges.get(exploc);
+      SimpleExp sim = n.f1;
+      
+      if(destvar.isReg){
+	      switch(sim.f0.which){
+	      case 0:
+	    	  Temp tm = (Temp) sim.f0.choice;
+	    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+	    	  if(var.isReg){
+	    		  emit("move " + regStr[destvar.location] + " hallocate " + regStr[var.location]);
+	    	  }
+	    	  else{
+	    		  emit("aload v0 spilledarg " + var.location + "\n");
+	    		  emit("move " + regStr[destvar.location] + " hallocate v0 ");
+	    	  }
+	    	  break;
+	      case 1:
+	    	  IntegerLiteral il = (IntegerLiteral) sim.f0.choice;
+	    	  emit("move  "+ regStr[destvar.location] + " hallocate " + il.f0.tokenImage);
+	    	  break;
+	      }
+    	  
+      }
+      else{
+    	  switch(sim.f0.which){
+    	  case 0:
+	    	  Temp tm = (Temp) sim.f0.choice;
+	    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+	    	  if(var.isReg){
+	    		  emit("move v0 hallocate " + regStr[var.location]);
+	    		  emit("astore spilledarg " + destvar.location + " v0 ");
+	    	  }
+	    	  else{
+	    		  emit("aload v0 spilledarg " + var.location);
+	    		  emit("move v0 hallocate v0");
+	    		  emit("astore spilledarg " + destvar.location + " v0");
+	    	  }
+    	  case 1:
+	    	  IntegerLiteral il = (IntegerLiteral) sim.f0.choice;
+	    	  emit("move v0 hallocate " + il.f0.tokenImage);
+	    	  emit("astore spilledarg " + destvar.location + " v0");
+    	  }
+      }
+      
+      
       return (R) (Integer)18;
    }
 
@@ -406,16 +495,97 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      Integer rloc = (Integer)n.f2.accept(this);
+      
+      SimpleExp sim = n.f2;
+      RangePair destvar = currproc.ranges.get(exploc) ;
       RangePair lvar = currproc.ranges.get(Integer.parseInt(n.f1.f1.f0.tokenImage));
-      if(lvar.isReg){
-    	  emit("move v0 "+ opStr[n.f0.f0.which] + regStr[lvar.location]  + regStr[rloc]);
+      if(destvar.isReg && lvar.isReg){
+    	  switch(sim.f0.which){
+    	  case 0:
+    		  Temp tm = (Temp) sim.f0.choice;
+    		  RangePair rvar = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    		  if(rvar.isReg)
+    			  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + regStr[lvar.location] + regStr[rvar.location]);
+    		  else{
+    			  emit("aload v0 spilledarg " + rvar.location);
+    			  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + regStr[lvar.location] + " v0");
+    		  }
+    		  break;
+    	  case 1:
+    		  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + regStr[lvar.location] + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+    	  }
       }
+      else if(destvar.isReg && !lvar.isReg){
+    	  switch(sim.f0.which){
+    	  case 0:
+    		  Temp tm = (Temp) sim.f0.choice;
+    		  RangePair rvar = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    		  if(rvar.isReg){
+    			  emit("aload v0 spilledarg " + lvar.location);
+    			  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + " v0 " + regStr[rvar.location]);
+    		  }
+    		  else{
+    			  emit("aload v0 spilledarg " + lvar.location);
+    			  emit("aload v1 spilledarg " + rvar.location);
+    			  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + " v0 v1 ");
+    		  }
+    		  break;
+    	  case 1:
+    		  emit("aload v0 spilledarg " + lvar.location);
+    		  emit("move " + regStr[destvar.location] + opStr[n.f0.f0.which] + " v0 " + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+    	  }
+    	  
+      }
+      
+      else if(!destvar.isReg && lvar.isReg){
+    	  switch(sim.f0.which){
+    	  case 0:
+    		  Temp tm = (Temp) sim.f0.choice;
+    		  RangePair rvar = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    		  if(rvar.isReg){
+    			  emit("move v0 " +  opStr[n.f0.f0.which] + regStr[lvar.location] + regStr[rvar.location]);
+    			  emit("astore spilledarg " + destvar.location + " v0 ");
+    		  }
+    		  else{
+    			  emit("aload v0 spilledarg " + rvar.location);
+    			  emit("move v0 " + opStr[n.f0.f0.which] + regStr[lvar.location] + " v0 ");
+    			  emit("astore spilledarg " + destvar.location + " v0 ");
+    		  }
+    		  break;
+    	  case 1:
+    		  emit("move v0" + opStr[n.f0.f0.which] + regStr[lvar.location] + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+    		  emit("astore spilledarg " + destvar.location + " v0 ");
+    	  }
+    	  
+      }
+     
+      //lvar is not reg, destvar is not reg
       else{
-    	  emit("aload v0 spilledarg " + lvar.location + "\n");
-    	  emit("move v0  "  + opStr[n.f0.f0.which] + " v0 "+ regStr[rloc]);
+    	  switch(sim.f0.which){
+    	  case 0:
+    		  Temp tm = (Temp) sim.f0.choice;
+    		  RangePair rvar = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+    		  if(rvar.isReg){
+    			  emit("aload v0 spilledarg " + lvar.location);
+    			  emit("move v0 " + opStr[n.f0.f0.which] + " v0 " + regStr[rvar.location]);
+	    		  emit("astore spilledarg " + destvar.location + " v0 ");
+    		  }
+    		  else{
+    			  emit("aload v0 spilledarg " + lvar.location);
+    			  emit("aload v1 spilledarg " + rvar.location);
+    			  emit("move v0" +  opStr[n.f0.f0.which] + " v0 v1 ");
+	    		  emit("astore spilledarg " + destvar.location + " v0 ");
+    		  }
+    		  break;
+    	  case 1:
+    		  emit("aload v0 spilledarg " + lvar.location);
+    		  emit("move v0" +  opStr[n.f0.f0.which] + " v0 " + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
+    		  emit("astore spilledarg " + destvar.location + " v0 ");
+    	  }
+    	  
       }
-      return (R)(Integer) 18;
+      
+      return null;
    }
 
    /**
@@ -436,29 +606,51 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     *       | Label()
     */
    public R visit(SimpleExp n) {
-      R _ret=null;
-      switch(n.f0.which){
-      case 0:
-    	  Temp tm = (Temp) n.f0.choice;
-    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
-    	  if(var.isReg){
-    		  return (R) (Integer) var.location;
-    	  }
-    	  else{
-    		  emit("aload v0 spilledarg " + var.location + "\n");
-    		  return (R) (Integer) 18;
-    	  }
-      case 1:
-    	  IntegerLiteral il = (IntegerLiteral) n.f0.choice;
-    	  emit("move v0 " + il.f0.tokenImage);
-		  return (R) (Integer) 18;
+	   //Should be visited only in the case movestmt -> Exp -> SimpleExp
+      RangePair destvar = currproc.ranges.get(exploc);
       
-      case 2:
-    	  emit("move v0 " + ((Label)n.f0.choice).f0.tokenImage + "\n");
-		  return (R) (Integer) 18;
+      if(destvar.isReg){
+	      switch(n.f0.which){
+	      case 0:
+	    	  Temp tm = (Temp) n.f0.choice;
+	    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+	    	  if(var.isReg){
+	    		  emit("move " + regStr[destvar.location] + regStr[var.location]);
+	    	  }
+	    	  else{
+	    		  emit("aload " +regStr[destvar.location]+  " spilledarg " + var.location + "\n");
+	    	  }
+	    	  break;
+	      case 1:
+	    	  IntegerLiteral il = (IntegerLiteral) n.f0.choice;
+	    	  emit("move  "+ regStr[destvar.location] + il.f0.tokenImage);
+	    	  break;
+	      case 2:
+	    	  emit("move "+ regStr[destvar.location] + ((Label)n.f0.choice).f0.tokenImage + "\n");
+	      }
+    	  
       }
-      System.out.println("xxxxxxxxxx");
-      System.exit(1);
+      else{
+    	  switch(n.f0.which){
+    	  case 0:
+	    	  Temp tm = (Temp) n.f0.choice;
+	    	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
+	    	  if(var.isReg){
+	    		  emit("astore spilledarg " + destvar.location + regStr[var.location]);
+	    	  }
+	    	  else{
+	    		  emit("aload v0 spilledarg " + var.location);
+	    		  emit("astore spilledarg " + destvar.location + " v0");
+	    	  }
+    	  case 1:
+	    	  IntegerLiteral il = (IntegerLiteral) n.f0.choice;
+	    	  emit("move v0 " + il.f0.tokenImage);
+	    	  emit("astore spilledarg " + destvar.location + " v0");
+    	  case 2:
+	    	  emit("move v0"+ ((Label)n.f0.choice).f0.tokenImage + "\n");
+	    	  emit("astore spilledarg " + destvar.location + " v0");
+    	  }
+      }
       return null;
    }
 

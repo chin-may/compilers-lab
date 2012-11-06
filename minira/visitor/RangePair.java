@@ -11,6 +11,7 @@ public class RangePair implements Comparable<RangePair>{
 		start = s;
 		end = e;
 		rangeof = ro;
+		location = -1;
 	}
 
 	@Override

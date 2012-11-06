@@ -80,10 +80,12 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    public R visit(Goal n) {
 	  currproc = procs.get("MAIN");
 	  currstack = currproc.stacktop;
-	  emit("MAIN" + " [  0  " + currproc.stackspace + " "+ currproc.maxcall + " ]\n" );
+	  emit("MAIN" + " [  0  ] [" + currproc.stackspace + "] ["+ currproc.maxcall + " ]\n" );
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
+      emit("end");
+      emit("\n");
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
@@ -109,13 +111,15 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    public R visit(Procedure n) {
 	  currproc = procs.get(n.f0.f0.tokenImage);
 	  currstack = currproc.stacktop;
-	  emit(n.f0.f0.tokenImage + " [ " + n.f2.f0.tokenImage + " " + currproc.stackspace + " "+ currproc.maxcall + " ]\n" );
+	  currloc = 0;
+	  emit(n.f0.f0.tokenImage + " [ " + n.f2.f0.tokenImage + "] [" + currproc.stackspace + "] ["+ currproc.maxcall + " ]\n" );
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
+      emit("end");
       return _ret;
    }
 
@@ -162,7 +166,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(CJumpStmt n) {
       R _ret=null;
-      int tnum = Integer.parseInt(n.f1.f0.tokenImage);
+      int tnum = Integer.parseInt(n.f1.f1.f0.tokenImage);
       RangePair var = currproc.ranges.get(tnum);
       if(var.isReg){
     	  emit("cjump " + regStr[var.location] + n.f2.f0.tokenImage);
@@ -235,11 +239,11 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       var1 = currproc.ranges.get(Integer.parseInt(n.f1.f1.f0.tokenImage));
       var2 = currproc.ranges.get(Integer.parseInt(n.f2.f1.f0.tokenImage));
       if(var1.isReg && var2.isReg ){
-    	  emit("hload " + regStr[var1.location] + regStr[var2.location] + n.f2.f0.tokenImage + "\n");
+    	  emit("hload " + regStr[var1.location] + regStr[var2.location] + n.f2.f1.f0.tokenImage + "\n");
       }
       else if(var1.isReg && !var2.isReg){
     	  emit("aload v0 spilledarg " + var2.location + "\n");
-    	  emit("hload " + regStr[var1.location] + " v0 "+ n.f2.f0.tokenImage + "\n" );
+    	  emit("hload " + regStr[var1.location] + " v0 "+ n.f2.f1.f0.tokenImage + "\n" );
       }
       else if(!var1.isReg && var2.isReg){
     	  emit("aload v0 spilledarg " + var1.location + "\n");
@@ -248,7 +252,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       else{
     	  emit("aload v0 spilledarg " + var1.location + "\n");
     	  emit("aload v1 spilledarg " + var2.location + "\n");
-    	  emit("hload v0 v1 " + n.f2.f0.tokenImage + "\n" );
+    	  emit("hload v0 v1 " + n.f3.f0.tokenImage + "\n" );
       }
       n.f0.accept(this);
       n.f1.accept(this);
@@ -360,7 +364,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       emit("call v0");
       while(!tmpstack.empty()){
     	  RangePair var = tmpstack.pop();
-    	  emit("aload " + regStr[var.location] + --currstack + "\n");
+    	  emit("aload " + regStr[var.location] + " spilledarg "+ --currstack + "\n");
       }
       return _ret;
    }
@@ -373,7 +377,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       Integer loc = (Integer)n.f1.accept(this);
       emit("move v0 hallocate " + regStr[loc] + "\n");
-      return (R) (Integer)19;
+      return (R) (Integer)18;
    }
 
    /**
@@ -388,13 +392,13 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       Integer rloc = (Integer)n.f2.accept(this);
       RangePair lvar = currproc.ranges.get(Integer.parseInt(n.f1.f1.f0.tokenImage));
       if(lvar.isReg){
-    	  emit("move v0 " + regStr[lvar.location] + opStr[n.f0.f0.which] + regStr[rloc]);
+    	  emit("move v0 "+ opStr[n.f0.f0.which] + regStr[lvar.location]  + regStr[rloc]);
       }
       else{
     	  emit("aload v0 spilledarg " + lvar.location + "\n");
-    	  emit("move v0 v0 "  + opStr[n.f0.f0.which] + regStr[rloc]);
+    	  emit("move v0  "  + opStr[n.f0.f0.which] + " v0 "+ regStr[rloc]);
       }
-      return (R)(Integer) 19;
+      return (R)(Integer) 18;
    }
 
    /**
@@ -424,17 +428,17 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     		  return (R) (Integer) var.location;
     	  }
     	  else{
-    		  emit("aload v0 spilledarg" + regStr[var.location] + "\n");
-    		  return (R) (Integer) 19;
+    		  emit("aload v0 spilledarg " + var.location + "\n");
+    		  return (R) (Integer) 18;
     	  }
       case 1:
     	  IntegerLiteral il = (IntegerLiteral) n.f0.choice;
     	  emit("move v0 " + il.f0.tokenImage);
-		  return (R) (Integer) 19;
+		  return (R) (Integer) 18;
       
       case 2:
     	  emit("move v0 " + ((Label)n.f0.choice).f0.tokenImage + "\n");
-		  return (R) (Integer) 19;
+		  return (R) (Integer) 18;
       }
       System.exit(1);
       return null;
@@ -471,7 +475,20 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    }
    
    void emit(String s){
-	   System.out.println(s.toUpperCase());
+	   System.out.println(cap(s));
+   }
+   
+   String cap(String s){
+	   String[] sar = s.split("\\s+");
+	   String ret = "";
+	   for(String sub:sar){
+		   if(!sub.matches("[vast]\\d")){
+			   ret+=sub.toUpperCase();
+		   }
+		   else ret+=sub;
+		   ret+=" ";
+	   }
+	   return ret;
    }
 
 }

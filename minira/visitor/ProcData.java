@@ -2,6 +2,7 @@ package visitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public class ProcData {
 	public ArrayList<StmNode> nodes;
@@ -14,6 +15,7 @@ public class ProcData {
 	int stackspace;
 	int stacktop;
 	int maxcall;
+	Set<Integer> usedReg;
 
 	public ProcData(String lbl, int argn) {
 		nodes = new ArrayList<StmNode>();

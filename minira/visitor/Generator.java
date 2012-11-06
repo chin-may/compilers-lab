@@ -51,8 +51,12 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    }
 
    public R visit(NodeOptional n) {
-      if ( n.present() )
+      if ( n.present() ){
+    	  if(n.node instanceof Label){
+    		  emit(((Label)n.node).f0.tokenImage);
+    	  }
          return n.node.accept(this);
+         }
       else
          return null;
    }
@@ -241,11 +245,11 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       var1 = currproc.ranges.get(Integer.parseInt(n.f1.f1.f0.tokenImage));
       var2 = currproc.ranges.get(Integer.parseInt(n.f2.f1.f0.tokenImage));
       if(var1.isReg && var2.isReg ){
-    	  emit("hload " + regStr[var1.location] + regStr[var2.location] + n.f2.f1.f0.tokenImage + "\n");
+    	  emit("hload " + regStr[var1.location] + regStr[var2.location] + n.f3.f0.tokenImage + "\n");
       }
       else if(var1.isReg && !var2.isReg){
     	  emit("aload v0 spilledarg " + var2.location + "\n");
-    	  emit("hload " + regStr[var1.location] + " v0 "+ n.f2.f1.f0.tokenImage + "\n" );
+    	  emit("hload " + regStr[var1.location] + " v0 "+ n.f3.f0.tokenImage + "\n" );
       }
       else if(!var1.isReg && var2.isReg){
     	  emit("aload v0 spilledarg " + var1.location + "\n");
@@ -327,6 +331,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(StmtExp n) {
       R _ret=null;
+      for(int i = 10; i<= 17; i++){
+    	  if(currproc.usedReg.contains(i))
+    		  emit("astore spilledarg " + currstack++ + regStr[i]);
+      }
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
@@ -348,6 +356,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  emit("move v0 " + ((IntegerLiteral)sim.f0.choice).f0.tokenImage);
       }
       
+      for(int i = 17; i>= 10; i--){
+    	  if(currproc.usedReg.contains(i))
+    		  emit("aload " + regStr[i] + " spilledarg " + --currstack);
+      }
       emit("end");
       return _ret;
    }
@@ -372,6 +384,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     		  currstack++;
     	  }
       }
+      emit("astore spilledarg " + currstack++ + " a0 ");
+      emit("astore spilledarg " + currstack++ + " a1 ");
+      emit("astore spilledarg " + currstack++ + " a2 ");
+      emit("astore spilledarg " + currstack++ + " a3 ");
       n.f0.accept(this);
       n.f2.accept(this);
       n.f4.accept(this);
@@ -379,9 +395,9 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       for(Node nod:n.f3.nodes){
     	  Temp tm = (Temp) nod;
     	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
-    	  if(paramnum < 3){
+    	  if(paramnum <= 3){
     		  if(var.isReg){
-    			  emit("move " + regStr[var.location] + "a" + paramnum);
+    			  emit("move "  + "a" + paramnum + regStr[var.location]);
     		  }
     		  else{
     			  emit("aload a" + paramnum + " spilledarg " + var.location);
@@ -417,7 +433,10 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  System.out.println("xxxxx function call");
       }
       
-      
+      emit("aload a3 spilledarg " + --currstack );
+      emit("aload a2 spilledarg " + --currstack );
+      emit("aload a1 spilledarg " + --currstack );
+      emit("aload a0 spilledarg " + --currstack );
       while(!tmpstack.empty()){
     	  RangePair var = tmpstack.pop();
     	  emit("aload " + regStr[var.location] + " spilledarg "+ --currstack + "\n");

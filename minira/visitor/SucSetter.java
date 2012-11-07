@@ -138,87 +138,104 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 		   }
 		   
 	   }
+	   
+	   
+	   
+      ArrayList<RangePair> liveint =  new ArrayList<RangePair>();
+      for(RangePair rp: currproc.ranges.values()) liveint.add(rp);
+      
+      int[] locations = new int[liveint.size()];
+      boolean[] isReg = new boolean[liveint.size()];
+      
+      List<Integer> freeReg = new LinkedList<>();
+      for(int i=0;i<18;i++)
+    	  freeReg.add(i);
+      
+     //Linear scan 
+      int stackloc = 0;
+      List<RangePair> active = new LinkedList<>();
+      
+      Comparator<RangePair> scmp = new Comparator<RangePair>() {
 
-	   ArrayList<RangePair> liveint = new ArrayList<RangePair>();
-	   for(RangePair rp:currproc.ranges.values()){
-		   liveint.add(rp);
-	   }
-	   Collections.sort(liveint, new Comparator<RangePair>(){
+			@Override
+			public int compare(RangePair o1, RangePair o2) {
+				if(o1.start > o2.start) return 1;
+				if(o1.start < o2.start) return -1;
+				return 0;
+			}};
+      Collections.sort(liveint,scmp);
+      System.err.println("Starting lin scan " + currproc.label);
+      for(int i = 0; i< liveint.size(); i++){
+    	  //Expire old intervals
+    	  System.err.println("i is " + i);
+    	  LinkedList<RangePair> expirelst = new LinkedList<RangePair>();
+    	  Collections.sort(active);
+    	  for(int l=0; l < active.size(); l++){
+    		  if(active.get(l).end < liveint.get(i).start){
+    			  expirelst.add(active.get(l));
+    			  int t =0;
+    			  while(liveint.get(t).rangeof != active.get(l).rangeof) t++;
+    			  if(!freeReg.contains(locations[t])) freeReg.add(locations[t]);
+    			  else System.err.println("xxxxxxxxxxxxxx");
+    			  System.err.println("expiring " + locations[t]);
+    		  }
+    		  active.removeAll(expirelst);
+    		  System.err.println("active after expiring:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    		  }
+    		  
+    	  }
+    	  
+    	  if(active.size() == 18){
+    		  System.out.println("before spillatinterval active:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    		  }
+    		  //Spill at interval
+    		  RangePair spill = active.get(active.size() - 1);
+    		  if(spill.end > liveint.get(i).end){
+    			  int m = 0;
+    			  while(liveint.get(m).rangeof != spill.rangeof) m++;
+    			  locations[i] = locations[m];
+    			  isReg[i] = true;
+    			  locations[m] = stackloc++;
+    			  isReg[m] = false;
+    			  active.remove(spill);
+    			  active.add(liveint.get(i));
+    			  Collections.sort(active);
+    			  System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
+    			  System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
+    		  }
+    		  else{
+    			  locations[i] = stackloc++;
+    			  isReg[i] = false;
+    		  }
+    		  System.err.println("After spill interval active:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    		  }
+    	  }
+    	  else{
+    		  locations[i] = freeReg.remove(0);
+    		  isReg[i] = true;
+    		  active.add(liveint.get(i));
+    		  Collections.sort(active);
+    		  System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
+    	  }
+    	  
+    	  
+      }
+	   
+	   
 
-		   @Override
-		   public int compare(RangePair o1, RangePair o2) {
-			   if(o1.start > o2.start) return 1;
-			   if(o1.start < o2.start) return -1;
-			   return 0;
-		   }
-	   });
-	   ArrayList<RangePair> active = new ArrayList<RangePair>();
-	   int[] locations = new int[liveint.size()];
-	   boolean[]isReg = new boolean[liveint.size()];
-	   List<Integer> freeReg = new LinkedList<Integer>();
-	   Set<Integer> usedReg = new HashSet<Integer>();
-	   for(int i=0; i < 18; i++){
-		   freeReg.add(i);
-	   }
-
-	   int stackloc = 0;
-	   for(int i = 0; i < liveint.size(); i++){
-		   LinkedList<Integer> expirelst = new LinkedList<Integer>();
-		   LinkedList<Integer> freelst = new LinkedList<Integer>();
-		   Collections.sort(active);
-		   for(int j = 0; j<active.size(); j++){
-			   if(active.get(j).end >= liveint.get(i).start)
-				   break;
-			   expirelst.add(j);
-			   freelst.add(locations[j] );
-		   }
-		   active.removeAll(expirelst);
-		   freeReg.addAll(freelst);
-		   if(active.size() == 18){
-			   RangePair spill = active.get(active.size() - 1);
-			   if(spill.end > liveint.get(i).end){
-				   int k;
-				   for(k=0; k<liveint.size(); k++)
-					   if(spill.rangeof == liveint.get(k).rangeof) break;
-				   locations[i] = locations[ k];
-				   isReg[i] = true;
-				   isReg[k ] = false;
-				   locations[ k] = stackloc ++;
-/*				   currproc.ranges.get(spill.rangeof).isReg = false;
-				   currproc.ranges.get(spill.rangeof).location = locations[ k];
-				   currproc.ranges.get(liveint.get(k).rangeof).isReg = true;
-				   currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];*/
-				   
-				   active.remove(active.size() - 1);
-				   active.add(liveint.get(i));
-				   Collections.sort(active);
-					   
-			   }
-			   else{
-				   isReg[i] = false;
-				   locations[i] = stackloc++;
-/*				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
-				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
-			   }
-
-		   }
-		   else{
-			   int curreg = freeReg.remove(0);
-			   locations[i] = curreg;
-			   isReg[i] = true;
-/*			   currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
-			   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
-			   active.add(liveint.get(i));
-			   Collections.sort(active);
-		   }
-	   }
 	   
       for(int i=0;i<liveint.size();i++){
     	  currproc.ranges.get(liveint.get(i).rangeof).isReg = isReg[i];
     	  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
       }
 	   
-	   
+      Set<Integer> usedReg = new HashSet<Integer>();
       for(int i = 0; i<locations.length; i++){
     	  if(isReg[i] && locations[i] >= 10 && locations[i] <= 17)
     		  usedReg.add(locations[i]);

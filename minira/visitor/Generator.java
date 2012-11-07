@@ -284,6 +284,17 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
 		  rp.location = 18;
 		  currproc.ranges.put(-2, rp);
 	  }
+	  else{
+		  RangePair outrangech = currproc.ranges.get(exploc);
+		  if(outrangech.start>currloc || outrangech.end < currloc){
+			  exploc = -2;
+			  RangePair rp = new RangePair(-2,0,0);
+			  rp.isReg = true;
+			  rp.location = 18;
+			  currproc.ranges.put(-2, rp);
+			  
+		  }
+	  }
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -401,9 +412,9 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f2.accept(this);
       n.f4.accept(this);
-      int paramnum = 0;
-      for(Node nod:n.f3.nodes){
-    	  Temp tm = (Temp) nod;
+      int paramnum = n.f3.nodes.size() - 1;
+      for(int i= n.f3.nodes.size() - 1; i >= 0; i--){
+    	  Temp tm = (Temp) n.f3.nodes.get(i);
     	  RangePair var = currproc.ranges.get(Integer.parseInt(tm.f1.f0.tokenImage));
     	  if(paramnum <= 3){
     		  if(var.isReg){
@@ -422,7 +433,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     			  emit("passarg " + (paramnum - 3) + " v1\n");
     		  }
     	  }
-    	  paramnum++;
+    	  paramnum--;
       }
       
       SimpleExp sim = n.f1;
@@ -512,7 +523,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       }
       
       
-      return (R) (Integer)18;
+      return null;
    }
 
    /**

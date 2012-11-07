@@ -2,6 +2,8 @@ package visitor;
 import syntaxtree.*;
 import java.util.*;
 
+import org.omg.CORBA.FREE_MEM;
+
 /**
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
@@ -258,10 +260,6 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     * f4 -> StmtExp()
     */
    public R visit(Procedure n) {
-/*	   StmNode prev = currproc.nodes.get(currproc.nodes.size() - 1);
-	   if(prev.suc.contains(inum)){ 
-		   prev.suc.remove(inum ); //TODO should be inum - 1??
-	   }*/
 	   inum = 0;
 	   currproc = new ProcData(n.f0.f0.tokenImage, Integer.parseInt(n.f2.f0.tokenImage));
 	   procs.put(n.f0.f0.tokenImage, currproc); 
@@ -328,94 +326,94 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 
       }
       
-      ArrayList<RangePair> liveint = new ArrayList<RangePair>();
-      for(RangePair rp:currproc.ranges.values()){
-    	  liveint.add(rp);
-      }
-      Collections.sort(liveint, new Comparator<RangePair>(){
-
-		@Override
-		public int compare(RangePair o1, RangePair o2) {
-			if(o1.start > o2.start) return 1;
-			if(o1.start < o2.start) return -1;
-			return 0;
-		}
-      });
-      ArrayList<RangePair> active = new ArrayList<RangePair>();
+      ArrayList<RangePair> liveint =  new ArrayList<RangePair>();
+      for(RangePair rp: currproc.ranges.values()) liveint.add(rp);
+      
       int[] locations = new int[liveint.size()];
       boolean[] isReg = new boolean[liveint.size()];
-      LinkedList<Integer> freeReg = new LinkedList<Integer>();
-      Set<Integer> usedReg = new HashSet<Integer>();
-      for(int i=0; i < 18; i++){
-    	  freeReg.add(i);
-      }
       
+      List<Integer> freeReg = new LinkedList<>();
+      for(int i=0;i<18;i++)
+    	  freeReg.add(i);
+      
+     //Linear scan 
       int stackloc = Integer.parseInt(n.f2.f0.tokenImage) - 4;
-      if(stackloc < 0)  stackloc = 0;
-      for(int i = 0; i < liveint.size(); i++){
-    	  LinkedList<Integer> expirelst = new LinkedList<Integer>();
-    	  LinkedList<Integer> freelst = new LinkedList<Integer>();
-	      //expiring old intervals
+      if(stackloc < 0) stackloc =0;
+      List<RangePair> active = new LinkedList<>();
+      
+      Comparator<RangePair> scmp = new Comparator<RangePair>() {
+
+			@Override
+			public int compare(RangePair o1, RangePair o2) {
+				if(o1.start > o2.start) return 1;
+				if(o1.start < o2.start) return -1;
+				return 0;
+			}};
+      Collections.sort(liveint,scmp);
+      System.err.println("Starting lin scan " + currproc.label);
+      for(int i = 0; i< liveint.size(); i++){
+    	  //Expire old intervals
+    	  System.err.println("i is " + i);
+    	  LinkedList<RangePair> expirelst = new LinkedList<RangePair>();
     	  Collections.sort(active);
-    		  System.out.print("active ");
-    	  for(int j = 0; j<active.size(); j++){
-    		  int dbg_k = 0;
-    		  for(dbg_k = 0; dbg_k < liveint.size(); dbg_k++)
-    			  if(liveint.get(dbg_k).rangeof == active.get( j).rangeof) {
-    				  break;
-    			  }
-    		  System.out.print(locations[dbg_k] + " ");
-    		  if(active.get(j).end >= liveint.get(i).start)
-    			  break;
-			  expirelst.add(j);
-			  freelst.add(locations[j]);
-    	  }
-    	  System.out.println(freeReg);
-    	  active.removeAll(expirelst);
-    	  for(Integer fr:freelst){
-    		  if(!freeReg.contains(fr)) freeReg.add(fr);
-    	  }
-    	  if(active.size() == 18){
-    		  //spill at interval
-    		  RangePair spill = active.get(active.size() - 1);
-    		  if(spill.end > liveint.get(i).end){
-    			  int k;
-    			  for(k=0; k<liveint.size(); k++)
-    				  if(spill.rangeof == liveint.get(k).rangeof) break;
-    			  locations[i] = locations[ k];
-         		  isReg[i] = true;
-    			  isReg[k ]  = false;
-    			  locations[ k] = stackloc++;
-/*     			  currproc.ranges.get(spill.rangeof).isReg = false;
-				  currproc.ranges.get(spill.rangeof).location = locations[ k];
-				  currproc.ranges.get(liveint.get(k).rangeof).isReg = true;
-				  currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];*/
-				  
-    			   active.remove(active.size() - 1);
-				   active.add(liveint.get(i));
-				   Collections.sort(active);
-				  
+    	  for(int l=0; l < active.size(); l++){
+    		  if(active.get(l).end < liveint.get(i).start){
+    			  expirelst.add(active.get(l));
+    			  int t =0;
+    			  while(liveint.get(t).rangeof != active.get(l).rangeof) t++;
+    			  if(!freeReg.contains(locations[t])) freeReg.add(locations[t]);
+    			  else System.err.println("xxxxxxxxxxxxxx");
+    			  System.err.println("expiring " + locations[t]);
     		  }
-    		  else{
-    			  isReg[i] = false;
-    			  locations[i] = stackloc++;
-/*				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
-				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
-				   
-				   
+    		  active.removeAll(expirelst);
+    		  System.err.println("active after expiring:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     		  
     	  }
+    	  
+    	  if(active.size() == 18){
+    		  System.out.println("before spillatinterval active:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    		  }
+    		  //Spill at interval
+    		  RangePair spill = active.get(active.size() - 1);
+    		  if(spill.end > liveint.get(i).end){
+    			  int m = 0;
+    			  while(liveint.get(m).rangeof != spill.rangeof) m++;
+    			  locations[i] = locations[m];
+    			  isReg[i] = true;
+    			  locations[m] = stackloc++;
+    			  isReg[m] = false;
+    			  active.remove(spill);
+    			  active.add(liveint.get(i));
+    			  Collections.sort(active);
+    			  System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
+    			  System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
+    		  }
+    		  else{
+    			  locations[i] = stackloc++;
+    			  isReg[i] = false;
+    		  }
+    		  System.err.println("After spill interval active:");
+    		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
+    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    		  }
+    	  }
     	  else{
-    		  int curreg = freeReg.remove(0);
-    		  locations[i] = curreg;
+    		  locations[i] = freeReg.remove(0);
     		  isReg[i] = true;
-/*			  currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
-			  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
     		  active.add(liveint.get(i));
     		  Collections.sort(active);
+    		  System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
     	  }
+    	  
+    	  
       }
+      
+      
       for(int i=0;i<liveint.size();i++){
     	  currproc.ranges.get(liveint.get(i).rangeof).isReg = isReg[i];
     	  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
@@ -434,6 +432,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     	  currproc.ranges.put(i, rp);
       }
       
+      Set<Integer> usedReg = new HashSet<Integer>();
       for(int i = 0; i<locations.length; i++){
     	  if(isReg[i] && locations[i] >= 10 && locations[i] <= 17) usedReg.add(locations[i]);
       }
@@ -445,9 +444,9 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       System.err.println(currproc.label);
       for(RangePair rp:currproc.ranges.values()){
     	  if(rp.isReg)
-	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location]);
+	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location] + " " + rp.start + " e " + rp.end);
     	  else
-    		  System.err.println(rp.rangeof + " spilledarg " + rp.location);
+    		  System.err.println(rp.rangeof + " spilledarg " + rp.location + " " + rp.start + " e " + rp.end);
       }
       System.err.println("");
       

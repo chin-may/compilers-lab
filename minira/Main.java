@@ -10,7 +10,7 @@ public class Main {
 	//	try {
 			// use the following line only in IDE
 			 Node root = new microIRParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/ra/MoreThan4.microIR")).Goal();
+			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/ra/LinearSearch.microIR")).Goal();
 
 			// Final submission file should take input from command line
 			//Node root = new MiniIRParser(System.in).Goal();

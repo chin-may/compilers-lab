@@ -12,6 +12,8 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
    //
 	int inum = 0;
 	ProcData currproc;
+	String[] regStr = {" t0 ",  " t1 ", " t2 ", " t3 ", " t4 " , " t5 ", " t6 ", " t7 ", " t8 ", " t9 ", 
+    " s0 ", " s1 ", " s2 ", " s3 ", " s4 ", " s5 ", " s6 ", " s7 ", " v0 ", " v1 ", " a0 ", " a1 ", " a2 ", " a3 "};
 	
    public R visit(NodeList n) {
       R _ret=null;
@@ -153,20 +155,23 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 	   boolean[]isReg = new boolean[liveint.size()];
 	   List<Integer> freeReg = new LinkedList<Integer>();
 	   Set<Integer> usedReg = new HashSet<Integer>();
-	   for(int i=0; i < 19; i++){
+	   for(int i=0; i < 18; i++){
 		   freeReg.add(i);
 	   }
 
 	   int stackloc = 0;
 	   for(int i = 0; i < liveint.size(); i++){
 		   LinkedList<Integer> expirelst = new LinkedList<Integer>();
+		   LinkedList<Integer> freelst = new LinkedList<Integer>();
+		   Collections.sort(active);
 		   for(int j = 0; j<active.size(); j++){
 			   if(active.get(j).end >= liveint.get(i).start)
 				   break;
 			   expirelst.add(j);
+			   freelst.add(locations[j] );
 		   }
 		   active.removeAll(expirelst);
-		   freeReg.addAll(expirelst);
+		   freeReg.addAll(freelst);
 		   if(active.size() == 18){
 			   RangePair spill = active.get(active.size() - 1);
 			   if(spill.end > liveint.get(i).end){
@@ -174,17 +179,15 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 				   for(k=0; k<liveint.size(); k++)
 					   if(spill.rangeof == liveint.get(k).rangeof) break;
 				   locations[i] = locations[ k];
+				   isReg[i] = true;
 				   isReg[k ] = false;
 				   locations[ k] = stackloc ++;
-				   currproc.ranges.get(spill.rangeof).isReg = false;
+/*				   currproc.ranges.get(spill.rangeof).isReg = false;
 				   currproc.ranges.get(spill.rangeof).location = locations[ k];
 				   currproc.ranges.get(liveint.get(k).rangeof).isReg = true;
-				   currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];
+				   currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];*/
 				   
-				   int rm;
-				   for(rm = 0; rm <active.size(); rm++)
-					   if(spill.rangeof == active.get(rm).rangeof) break;
-				   active.remove(rm);
+				   active.remove(active.size() - 1);
 				   active.add(liveint.get(i));
 				   Collections.sort(active);
 					   
@@ -192,8 +195,8 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 			   else{
 				   isReg[i] = false;
 				   locations[i] = stackloc++;
-				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
-				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
+/*				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
+				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
 			   }
 
 		   }
@@ -201,24 +204,34 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 			   int curreg = freeReg.remove(0);
 			   locations[i] = curreg;
 			   isReg[i] = true;
-			   currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
-			   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
+/*			   currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
+			   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
 			   active.add(liveint.get(i));
 			   Collections.sort(active);
 		   }
 	   }
+	   
+      for(int i=0;i<liveint.size();i++){
+    	  currproc.ranges.get(liveint.get(i).rangeof).isReg = isReg[i];
+    	  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
+      }
+	   
+	   
       for(int i = 0; i<locations.length; i++){
     	  if(isReg[i] && locations[i] >= 10 && locations[i] <= 17)
     		  usedReg.add(locations[i]);
       }
-	   currproc.stacktop = stackloc + usedReg.size();
-	   currproc.stackspace = stackloc + 13;
+	   currproc.stacktop = stackloc ;
+	   currproc.stackspace = stackloc + 13 + usedReg.size();
       currproc.usedReg = usedReg;
       
-/*	   for(RangePair rp:liveint){
-		   currproc.ranges.get(rp.rangeof).location = rp.location;
-		   currproc.ranges.get(rp.rangeof).isReg = rp.isReg;
-	   }*/
+      System.err.println(currproc.label);
+      for(RangePair rp:currproc.ranges.values()){
+    	  if(rp.isReg)
+	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location]);
+    	  else
+    		  System.err.println(rp.rangeof + " spilledarg " + rp.location);
+      }
 
 	   n.f3.accept(this);
 	   n.f4.accept(this);
@@ -331,9 +344,9 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       ArrayList<RangePair> active = new ArrayList<RangePair>();
       int[] locations = new int[liveint.size()];
       boolean[] isReg = new boolean[liveint.size()];
-      List<Integer> freeReg = new LinkedList<Integer>();
+      LinkedList<Integer> freeReg = new LinkedList<Integer>();
       Set<Integer> usedReg = new HashSet<Integer>();
-      for(int i=0; i < 19; i++){
+      for(int i=0; i < 18; i++){
     	  freeReg.add(i);
       }
       
@@ -341,14 +354,27 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       if(stackloc < 0)  stackloc = 0;
       for(int i = 0; i < liveint.size(); i++){
     	  LinkedList<Integer> expirelst = new LinkedList<Integer>();
+    	  LinkedList<Integer> freelst = new LinkedList<Integer>();
 	      //expiring old intervals
+    	  Collections.sort(active);
+    		  System.out.print("active ");
     	  for(int j = 0; j<active.size(); j++){
+    		  int dbg_k = 0;
+    		  for(dbg_k = 0; dbg_k < liveint.size(); dbg_k++)
+    			  if(liveint.get(dbg_k).rangeof == active.get( j).rangeof) {
+    				  break;
+    			  }
+    		  System.out.print(locations[dbg_k] + " ");
     		  if(active.get(j).end >= liveint.get(i).start)
     			  break;
 			  expirelst.add(j);
+			  freelst.add(locations[j]);
     	  }
+    	  System.out.println(freeReg);
     	  active.removeAll(expirelst);
-    	  freeReg.addAll(expirelst);
+    	  for(Integer fr:freelst){
+    		  if(!freeReg.contains(fr)) freeReg.add(fr);
+    	  }
     	  if(active.size() == 18){
     		  //spill at interval
     		  RangePair spill = active.get(active.size() - 1);
@@ -357,17 +383,15 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     			  for(k=0; k<liveint.size(); k++)
     				  if(spill.rangeof == liveint.get(k).rangeof) break;
     			  locations[i] = locations[ k];
+         		  isReg[i] = true;
     			  isReg[k ]  = false;
     			  locations[ k] = stackloc++;
-     			  currproc.ranges.get(spill.rangeof).isReg = false;
+/*     			  currproc.ranges.get(spill.rangeof).isReg = false;
 				  currproc.ranges.get(spill.rangeof).location = locations[ k];
 				  currproc.ranges.get(liveint.get(k).rangeof).isReg = true;
-				  currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];
+				  currproc.ranges.get(liveint.get(k).rangeof).location = locations[i];*/
 				  
-				   int rm;
-				   for(rm = 0; rm <active.size(); rm++)
-					   if(spill.rangeof == active.get(rm).rangeof) break;
-				   active.remove(rm);
+    			   active.remove(active.size() - 1);
 				   active.add(liveint.get(i));
 				   Collections.sort(active);
 				  
@@ -375,8 +399,8 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  else{
     			  isReg[i] = false;
     			  locations[i] = stackloc++;
-				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
-				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
+/*				   currproc.ranges.get(liveint.get(i).rangeof).isReg = false;
+				   currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
 				   
 				   
     		  }
@@ -386,11 +410,15 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  int curreg = freeReg.remove(0);
     		  locations[i] = curreg;
     		  isReg[i] = true;
-			  currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
-			  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
+/*			  currproc.ranges.get(liveint.get(i).rangeof).isReg = true;
+			  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];*/
     		  active.add(liveint.get(i));
     		  Collections.sort(active);
     	  }
+      }
+      for(int i=0;i<liveint.size();i++){
+    	  currproc.ranges.get(liveint.get(i).rangeof).isReg = isReg[i];
+    	  currproc.ranges.get(liveint.get(i).rangeof).location = locations[i];
       }
       
       for(int i = 0; i < Integer.parseInt(n.f2.f0.tokenImage); i++){
@@ -410,8 +438,19 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     	  if(isReg[i] && locations[i] >= 10 && locations[i] <= 17) usedReg.add(locations[i]);
       }
       currproc.usedReg = usedReg;
-      currproc.stacktop = stackloc + usedReg.size();
-      currproc.stackspace = stackloc + 13;
+      currproc.stacktop = stackloc ;
+      currproc.stackspace = stackloc + 13 + usedReg.size();
+      
+      
+      System.err.println(currproc.label);
+      for(RangePair rp:currproc.ranges.values()){
+    	  if(rp.isReg)
+	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location]);
+    	  else
+    		  System.err.println(rp.rangeof + " spilledarg " + rp.location);
+      }
+      System.err.println("");
+      
       
       return _ret;
    }
@@ -450,6 +489,10 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
    public R visit(ErrorStmt n) {
       R _ret=null;
       n.f0.accept(this);
+      //System.out.println("ERROR\n");
+      StmNode curr = new StmNode();
+      currproc.nodes.add(curr);
+      inum++;
       return _ret;
    }
 
@@ -658,13 +701,13 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     *       | Label()
     */
    public R visit(SimpleExp n) {
-	  if(n.f0.which == 0){
-      Set<Integer> tmp = new HashSet<>();
-      tmp.add( (Integer)n.f0.accept(this));
-      return (R) tmp;}
-	  else{
-		  return (R) new HashSet<Integer>();
-	  }
+	   if(n.f0.which == 0){
+		   Set<Integer> tmp = new HashSet<>();
+		   tmp.add( (Integer)n.f0.accept(this));
+		   return (R) tmp;}
+	   else{
+		   return (R) new HashSet<Integer>();
+	   }
    }
 
    /**

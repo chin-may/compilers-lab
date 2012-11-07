@@ -87,6 +87,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
    public R visit(Goal n) {
 	  currproc = procs.get("MAIN");
 	  currstack = currproc.stacktop;
+	  currloc = 0;
 	  emit("MAIN" + " [  0  ] [" + currproc.stackspace + "] ["+ currproc.maxcall + " ]\n" );
       R _ret=null;
       n.f0.accept(this);
@@ -160,6 +161,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     * f0 -> "ERROR"
     */
    public R visit(ErrorStmt n) {
+	   emit("error");
       R _ret=null;
       n.f0.accept(this);
       return _ret;
@@ -274,6 +276,14 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(MoveStmt n) {
 	  exploc = Integer.parseInt(n.f1.f1.f0.tokenImage);
+	  if(!currproc.ranges.containsKey(exploc)){
+		  //For handling cases where Temp is not in any live out and is used only on that line
+		  exploc = -2;
+		  RangePair rp = new RangePair(-2,0,0);
+		  rp.isReg = true;
+		  rp.location = 18;
+		  currproc.ranges.put(-2, rp);
+	  }
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -405,11 +415,11 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  }
     	  else{
     		  if(var.isReg){
-    			  emit("passarg " + (paramnum - 4) + regStr[var.location] + "\n");
+    			  emit("passarg " + (paramnum - 3) + regStr[var.location] + "\n");
     		  }
     		  else{
-    			  emit("move v1 spilledarg " + var.location + "\n");
-    			  emit("passarg " + (paramnum - 4) + " v1\n");
+    			  emit("aload v1 spilledarg " + var.location + "\n");
+    			  emit("passarg " + (paramnum - 3) + " v1\n");
     		  }
     	  }
     	  paramnum++;
@@ -425,7 +435,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     		  emit("call " + regStr[var.location]);
     	  }
     	  else{
-    		  emit("move v0 spilledarg " + var.location);
+    		  emit("aload v0 spilledarg " + var.location);
     		  emit("call v0");
     	  }
       }
@@ -661,12 +671,14 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
 	    		  emit("aload v0 spilledarg " + var.location);
 	    		  emit("astore spilledarg " + destvar.location + " v0");
 	    	  }
+	    	  break;
     	  case 1:
 	    	  IntegerLiteral il = (IntegerLiteral) n.f0.choice;
 	    	  emit("move v0 " + il.f0.tokenImage);
 	    	  emit("astore spilledarg " + destvar.location + " v0");
+	    	  break;
     	  case 2:
-	    	  emit("move v0"+ ((Label)n.f0.choice).f0.tokenImage + "\n");
+	    	  emit("move v0 "+ ((Label)n.f0.choice).f0.tokenImage + "\n");
 	    	  emit("astore spilledarg " + destvar.location + " v0");
     	  }
       }

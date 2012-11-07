@@ -164,10 +164,10 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 				return 0;
 			}};
       Collections.sort(liveint,scmp);
-      System.err.println("Starting lin scan " + currproc.label);
+      //System.err.println("Starting lin scan " + currproc.label);
       for(int i = 0; i< liveint.size(); i++){
     	  //Expire old intervals
-    	  System.err.println("i is " + i);
+    	  //System.err.println("i is " + i);
     	  LinkedList<RangePair> expirelst = new LinkedList<RangePair>();
     	  Collections.sort(active);
     	  for(int l=0; l < active.size(); l++){
@@ -176,21 +176,21 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     			  int t =0;
     			  while(liveint.get(t).rangeof != active.get(l).rangeof) t++;
     			  if(!freeReg.contains(locations[t])) freeReg.add(locations[t]);
-    			  else System.err.println("xxxxxxxxxxxxxx");
-    			  System.err.println("expiring " + locations[t]);
+    			  //else System.err.println("xxxxxxxxxxxxxx");
+    			  //System.err.println("expiring " + locations[t]);
     		  }
     		  active.removeAll(expirelst);
-    		  System.err.println("active after expiring:");
+    		  //System.err.println("active after expiring:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     		  
     	  }
     	  
     	  if(active.size() == 18){
-    		  System.out.println("before spillatinterval active:");
+    		  //System.out.println("before spillatinterval active:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     		  //Spill at interval
     		  RangePair spill = active.get(active.size() - 1);
@@ -204,16 +204,16 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     			  active.remove(spill);
     			  active.add(liveint.get(i));
     			  Collections.sort(active);
-    			  System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
-    			  System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
+    			  ////System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
+    			  //System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
     		  }
     		  else{
     			  locations[i] = stackloc++;
     			  isReg[i] = false;
     		  }
-    		  System.err.println("After spill interval active:");
+    		  //System.err.println("After spill interval active:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     	  }
     	  else{
@@ -221,7 +221,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  isReg[i] = true;
     		  active.add(liveint.get(i));
     		  Collections.sort(active);
-    		  System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
+    		  //System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
     	  }
     	  
     	  
@@ -244,13 +244,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 	   currproc.stackspace = stackloc + 13 + usedReg.size();
       currproc.usedReg = usedReg;
       
-      System.err.println(currproc.label);
-      for(RangePair rp:currproc.ranges.values()){
-    	  if(rp.isReg)
-	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location]);
-    	  else
-    		  System.err.println(rp.rangeof + " spilledarg " + rp.location);
-      }
+      //System.err.println(currproc.label);
 
 	   n.f3.accept(this);
 	   n.f4.accept(this);
@@ -367,10 +361,10 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
 				return 0;
 			}};
       Collections.sort(liveint,scmp);
-      System.err.println("Starting lin scan " + currproc.label);
+      //System.err.println("Starting lin scan " + currproc.label);
       for(int i = 0; i< liveint.size(); i++){
     	  //Expire old intervals
-    	  System.err.println("i is " + i);
+    	  //System.err.println("i is " + i);
     	  LinkedList<RangePair> expirelst = new LinkedList<RangePair>();
     	  Collections.sort(active);
     	  for(int l=0; l < active.size(); l++){
@@ -379,21 +373,21 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     			  int t =0;
     			  while(liveint.get(t).rangeof != active.get(l).rangeof) t++;
     			  if(!freeReg.contains(locations[t])) freeReg.add(locations[t]);
-    			  else System.err.println("xxxxxxxxxxxxxx");
-    			  System.err.println("expiring " + locations[t]);
+    			  //else System.err.println("xxxxxxxxxxxxxx");
+    			  //System.err.println("expiring " + locations[t]);
     		  }
     		  active.removeAll(expirelst);
-    		  System.err.println("active after expiring:");
+    		  //System.err.println("active after expiring:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     		  
     	  }
     	  
     	  if(active.size() == 18){
-    		  System.out.println("before spillatinterval active:");
+    		  //System.out.println("before spillatinterval active:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     		  //Spill at interval
     		  RangePair spill = active.get(active.size() - 1);
@@ -407,16 +401,16 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     			  active.remove(spill);
     			  active.add(liveint.get(i));
     			  Collections.sort(active);
-    			  System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
-    			  System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
+    			  //System.err.println("taking " + locations[i] + " from " + liveint.get(m).rangeof + " giving to" + liveint.get(i).rangeof);
+    			  //System.err.println("putting " + liveint.get(m).rangeof + " on stack " + locations[m] );
     		  }
     		  else{
     			  locations[i] = stackloc++;
     			  isReg[i] = false;
     		  }
-    		  System.err.println("After spill interval active:");
+    		  //System.err.println("After spill interval active:");
     		  for(int dbg_p=0; dbg_p < active.size(); dbg_p++){
-    			  System.err.print(active.get(dbg_p).rangeof + " ");
+    			  //System.err.print(active.get(dbg_p).rangeof + " ");
     		  }
     	  }
     	  else{
@@ -424,7 +418,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
     		  isReg[i] = true;
     		  active.add(liveint.get(i));
     		  Collections.sort(active);
-    		  System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
+    		  //System.err.println("alloting new reg " + locations[i] + " to " + liveint.get(i).rangeof);
     	  }
     	  
     	  
@@ -458,14 +452,7 @@ public class SucSetter<R> extends GJNoArguDepthFirst<R> {
       currproc.stackspace = stackloc + 13 + usedReg.size();
       
       
-      System.err.println(currproc.label);
-      for(RangePair rp:currproc.ranges.values()){
-    	  if(rp.isReg)
-	    	  System.err.println(rp.rangeof + " reg " + regStr[rp.location] + " " + rp.start + " e " + rp.end);
-    	  else
-    		  System.err.println(rp.rangeof + " spilledarg " + rp.location + " " + rp.start + " e " + rp.end);
-      }
-      System.err.println("");
+      //System.err.println(currproc.label);
       
       
       return _ret;

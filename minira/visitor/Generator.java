@@ -243,6 +243,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(HLoadStmt n) {
       R _ret=null;
+      //System.out.println("//storing at"+ n.f1.f1.f0.tokenImage);
       RangePair var1, var2;
       var1 = currproc.ranges.get(Integer.parseInt(n.f1.f1.f0.tokenImage));
       var2 = currproc.ranges.get(Integer.parseInt(n.f2.f1.f0.tokenImage));
@@ -298,6 +299,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
+      //System.out.println("//storing at "+ exploc);
       n.f2.accept(this);
       exploc = -1;
       return _ret;
@@ -451,7 +453,7 @@ public class Generator<R> extends GJNoArguDepthFirst<R> {
     	  }
       }
       else{
-    	  System.out.println("xxxxx function call");
+    	  //System.out.println("xxxxx function call");
       }
       
       emit("aload a3 spilledarg " + --currstack );

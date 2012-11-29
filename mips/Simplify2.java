@@ -10,7 +10,7 @@ public class Simplify2 {
 	//	try {
 			// use the following line only in IDE
 			 Node root = new MiniRAParser(new
-			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/BinaryTree.miniIR")).Goal();
+			 FileInputStream("/home/chinmay/dev/compilers-lab/temp/Factorial.minira")).Goal();
 
 			// Final submission file should take input from command line
 			//Node root = new MiniIRParser(System.in).Goal();

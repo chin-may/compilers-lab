@@ -4,6 +4,7 @@
 
 package visitor;
 import syntaxtree.*;
+
 import java.util.*;
 
 /**
@@ -15,6 +16,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    // Auto class visitors--probably don't need to be overridden.
    //
    String[] regstr = { " $a0 " ,  " $a1 " ,  " $a2 " ,  " $a3 " ,  " $t0 " ,  " $t1 " ,  " $t2 " ,  " $t3 " ,  " $t4 " ,  " $t5 " ,  " $t6 " ,  " $t7 " ,  " $s0 " ,  " $s1 " ,  " $s2 " ,  " $s3 " ,  " $s4 " ,  " $s5 " ,  " $s6 " ,  " $s7 " ,  " $t8 " ,  " $t9 " ,  " $v0 " ,  " $v1 "};
+   boolean lbflag = true;
+   int amagic, cmagic;
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -79,6 +82,27 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f13 -> <EOF>
     */
    public R visit(Goal n) {
+	   
+	  int a, b, c; 
+	  a = Integer.parseInt(n.f2.f0.tokenImage);
+	  b = Integer.parseInt(n.f5.f0.tokenImage);
+	  c = Integer.parseInt(n.f8.f0.tokenImage);
+	  if(a>4)
+		  amagic = a - 4;
+	  else
+		  amagic = 0;
+	  
+	  if(c>4)
+		  cmagic = c - 4;
+	  else
+		  cmagic = 0;
+	   
+	   
+	  emit(".text");
+	  emit(".globl    main\nmain:");
+	  emit("move $fp , $sp");
+	  emit("subu $sp, $sp, " + ((cmagic + b)*4 + 4));
+	  emit("sw $ra , -4($fp)");
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -92,13 +116,18 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f9.accept(this);
       n.f10.accept(this);
       n.f11.accept(this);
+      
+      emit("lw $ra , -4($fp)");
+      emit("addu $sp , $sp " + ((cmagic + b)*4 + 4));
+      emit("j $ra");
+      emit("\n");
       n.f12.accept(this);
       n.f13.accept(this);
       emit(".text\n         .globl _halloc\n_halloc:\n         li $v0, 9\n     " +
       		"    syscall\n         j $ra\n\n         .text\n         .globl _print\n_print:\n     " +
       		"    li $v0, 1\n         syscall\n         la $a0, newl\n         li $v0, 4\n    " +
-      		"     syscall\n         j $ra\n\n         .data\n         .align   0\nnewl:    .asciiz \"\n\" \n      " +
-      		"   .data\n         .align   0\nstr_er:  .asciiz \" ERROR: abnormal termination\n\" \n\n");
+      		"     syscall\n         j $ra\n\n         .data\n         .align   0\nnewl:    .asciiz \"\\n\" \n      " +
+      		"   .data\n         .align   0\nstr_er:  .asciiz \" ERROR: abnormal termination\\n\" \n");
  
       return _ret;
    }
@@ -108,7 +137,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(StmtList n) {
       R _ret=null;
-      n.f0.accept(this);
+//      n.f0.accept(this);
+      for(Node cs:n.f0.nodes){
+    	  lbflag = true;
+    	  cs.accept(this);
+      }
       return _ret;
    }
 
@@ -127,6 +160,28 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f11 -> "END"
     */
    public R visit(Procedure n) {
+	   
+	  int a, b, c; 
+	  a = Integer.parseInt(n.f2.f0.tokenImage);
+	  b = Integer.parseInt(n.f5.f0.tokenImage);
+	  c = Integer.parseInt(n.f8.f0.tokenImage);
+	  if(a>4)
+		  amagic = a - 4;
+	  else
+		  amagic = 0;
+	  
+	  if(c>4)
+		  cmagic = c - 4;
+	  else
+		  cmagic = 0;
+	  
+	  emit(".text");
+	  emit(".globl    " + n.f0.f0.tokenImage);
+	  emit(n.f0.f0.tokenImage + ":");
+	  emit("sw $fp , -8($sp)");
+	  emit("move $fp , $sp");
+	  emit("subu $sp, $sp, " + ((cmagic + b)*4 + 8));
+	  emit("sw $ra , -4($fp)");
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
@@ -140,6 +195,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f9.accept(this);
       n.f10.accept(this);
       n.f11.accept(this);
+      emit("lw $ra , -4($fp)");
+      emit("lw $fp ,"+ ((cmagic + b)*4) + "($sp)");
+      emit("addu $sp , $sp " + ((cmagic + b)*4 + 8));
+      emit("j $ra");
+      emit("\n");
       return _ret;
    }
 
@@ -159,6 +219,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Stmt n) {
       R _ret=null;
+      lbflag = false;
       n.f0.accept(this);
       return _ret;
    }
@@ -177,6 +238,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     * f0 -> "ERROR"
     */
    public R visit(ErrorStmt n) {
+	   emit("li $v0, 4");
+       emit("la $a0, str_er");
+       emit("syscall");
+       emit("li $v0, 10");
+       emit("syscall ");
       R _ret=null;
       n.f0.accept(this);
       return _ret;
@@ -192,7 +258,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      emit("beqz " + regstr[n.f1.f0.which]);
+      emit("beqz " + regstr[n.f1.f0.which] + " , " + n.f2.f0.tokenImage);
       return _ret;
    }
 
@@ -220,7 +286,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f1.accept(this);
       n.f2.accept(this);
       n.f3.accept(this);
-      emit("sw" + n.f2.f0.tokenImage +  "("+ regstr[n.f3.f0.which] + ") " + " , " +regstr[n.f1.f0.which]  );
+      emit("sw" +regstr[n.f3.f0.which] + " , " + n.f2.f0.tokenImage +  "("+ regstr[n.f1.f0.which] + ") "  );
       return _ret;
    }
 
@@ -254,14 +320,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       case 0:
     	  HAllocate h = (HAllocate) n.f2.f0.choice;
     	  if(h.f1.f0.which == 0){
-    		  emit("move $a0 " + regstr[((Reg)h.f1.f0.choice).f0.which]);
+    		  emit("move $a0 ," + regstr[((Reg)h.f1.f0.choice).f0.which]);
     		  emit("jal _halloc");
-    		  emit("move " + regstr[n.f2.f0.which] + " v0 ");
+    		  emit("move " + regstr[n.f1.f0.which] + ", $v0 ");
     	  }
     	  else {
-    		  emit("move $a0 " + ((IntegerLiteral)h.f1.f0.choice).f0.tokenImage);
+    		  emit("li $a0 ," + ((IntegerLiteral)h.f1.f0.choice).f0.tokenImage);
     		  emit("jal _halloc");
-    		  emit("move " + regstr[n.f2.f0.which] + " v0 ");
+    		  emit("move " + regstr[n.f1.f0.which] + ", $v0 ");
     		  
     	  }
     	  break;
@@ -279,26 +345,26 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     		  break;
     	  case 1:
     		  if(b.f2.f0.which == 0){
-    			  emit("addu " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
+    			  emit("add " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
     		  }
     		  else{
-    			  emit("addiu " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
+    			  emit("add " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
     		  }
     		  break;
     	  case 2:
     		  if(b.f2.f0.which == 0){
-    			  emit("subu " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
+    			  emit("sub " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
     		  }
     		  else{
-    			  emit("addiu " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ "-" + ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
+    			  emit("sub " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +"," + ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
     		  }
     		  break;
     	  case 3:
     		  if(b.f2.f0.which == 0){
-    			  emit("mul " +","+ regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
+    			  emit("mul " + regstr[n.f1.f0.which] +","+ regstr[b.f1.f0.which] +","+ regstr[((Reg)b.f2.f0.choice).f0.which]);
     		  }
     		  else{
-    			  emit("oops! " + regstr[n.f1.f0.which] + regstr[b.f1.f0.which] + "-" + ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
+    			  emit("mul " + regstr[n.f1.f0.which] + regstr[b.f1.f0.which] +  ((IntegerLiteral)b.f2.f0.choice).f0.tokenImage);
     		  }
     		  break;
     		  
@@ -309,13 +375,13 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     	  SimpleExp s = (SimpleExp) n.f2.f0.choice;
     	  switch(s.f0.which){
     	  case 0:
-			  emit("move " + regstr[((Reg)n.f1.f0.choice).f0.which] + regstr[((Reg)n.f2.f0.choice).f0.which]);
+			  emit("move " + regstr[n.f1.f0.which] +","+ regstr[((Reg)((SimpleExp)n.f2.f0.choice).f0.choice).f0.which]);
 			  break;
     	  case 1:
-    		  emit("move "+ regstr[((Reg)n.f1.f0.choice).f0.which] + ((IntegerLiteral)s.f0.choice).f0.tokenImage);
+    		  emit("li "+ regstr[n.f1.f0.which] +","+ ((IntegerLiteral)s.f0.choice).f0.tokenImage);
     		  break;
     	  case 2:
-    		  emit("move "+ regstr[((Reg)n.f1.f0.choice).f0.which] + ((Label)s.f0.choice).f0.tokenImage );
+    		  emit("la "+ regstr[n.f1.f0.which] +","+ ((Label)s.f0.choice).f0.tokenImage );
     		  break;
     	  }
       }
@@ -331,7 +397,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       if(n.f1.f0.which == 0){
-    	  emit("move $a0" + regstr[((Reg)n.f1.f0.choice).f0.which]);
+    	  emit("move $a0 ," + regstr[((Reg)n.f1.f0.choice).f0.which]);
     	  emit("jal _print");
     	  
       }
@@ -349,7 +415,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      emit("lw" + regstr[n.f1.f0.which] + " , " + Integer.parseInt(n.f2.f1.f0.tokenImage)*4 + "($sp)");
+      int num = Integer.parseInt(n.f2.f1.f0.tokenImage);
+      if(num < amagic)
+	      emit("lw" + regstr[n.f1.f0.which] + " , " + num*4 + "($fp)");
+      else
+	      emit("lw" + regstr[n.f1.f0.which] + " , " + (num + cmagic)*4 + "($sp)");
+    	  
       return _ret;
    }
 
@@ -363,7 +434,12 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      emit("sw"   + Integer.parseInt(n.f1.f1.f0.tokenImage)*4 + "($sp)" + " , " + regstr[n.f2.f0.which]);
+      int num = Integer.parseInt(n.f1.f1.f0.tokenImage);
+      if(num < amagic)
+	      emit("sw" + regstr[n.f2.f0.which] + " , " + num*4 + "($sp)");
+      else
+	      emit("sw" + regstr[n.f2.f0.which] + " , " + (num + cmagic)*4 + "($sp)");
+//      emit("sw" + regstr[n.f2.f0.which] + " , "  + num*4 + "($sp)" );
       return _ret;
    }
 
@@ -377,6 +453,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
+      emit("sw " + regstr[n.f2.f0.which] + ", " + (Integer.parseInt(n.f1.f0.tokenImage)*4 - 4) + "($sp)");
       return _ret;
    }
 
@@ -388,6 +465,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
+      emit("jalr " + regstr[((Reg)n.f1.f0.choice).f0.which]);
       return _ret;
    }
 
@@ -507,6 +585,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
     */
    public R visit(Label n) {
       R _ret=null;
+      if(lbflag) System.out.print(n.f0.tokenImage+": ");
       n.f0.accept(this);
       return _ret;
    }

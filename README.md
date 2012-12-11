@@ -14,6 +14,8 @@ compilation.
 All input output uses standard input output.  
 To produce MIPS assembly code from macrotest.java :  
 
+java javacc/javacc/Main < macrotest.java (For typechecking the code)
+
 macrojava/macrojava < macrotest.java > test.java
 
 java miniir/Simplify < test.java > test.miniir
